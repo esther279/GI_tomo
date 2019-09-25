@@ -10,24 +10,7 @@ import tomopy
 from joblib import Parallel, delayed
 from fun_peaks import *
 
-
-##### Load sum_images
-if False:
-    source_dir = './sum_images/'
-    infiles = os.listdir(source_dir)
-    
-    for ii,file in enumerate(infiles):
-        print(file)
-        x = np.load(dir_path+file);
-        if ii==0:
-            data_sum = x
-        else: 
-            data_sum = data_sum + x
-        
-        
-    plt.figure(1); plt.clf()
-    plt.imshow(np.log10(data_sum), vmin=2, vmax=3)
-    plt.colorbar()
+# /home/etsai/BNL/Research/GIWAXS_tomo_2019C3/RLi/waxs/GI_tomo
 
 ########################################## 
 # Specify input
@@ -38,6 +21,7 @@ infiles = glob.glob(os.path.join(source_dir, '*tomo_real_9*.tiff'))
 filename = infiles[0][0:infiles[0].find('real_')+5]
 N_files = len(infiles)
 print('N_files = {}'.format(N_files))
+# e.g. ../raw/C8BTBT_0.1Cmin_tomo_real_9_x-3.600_th0.090_1.00s_2526493_000656_waxs.tiff'
 
 
 ########################################## 
@@ -67,7 +51,7 @@ np.save(fn_out, data_avg)
 # Load and plot to define roi
 if True:
     temp2 = np.load(fn_out)
-    plt.figure(100); plt.clf(); plt.title(fn_out)
+    plt.figure(100, figsize=[15,15]); plt.clf(); plt.title(fn_out)
     plt.imshow(np.log10(temp2), vmin=0.6, vmax=1.2); plt.colorbar()    
     get_peaks(infiles[0], verbose=1)
 
