@@ -53,7 +53,7 @@ if True:
     temp2 = np.load(fn_out)
     plt.figure(100, figsize=[15,15]); plt.clf(); plt.title(fn_out)
     plt.imshow(np.log10(temp2), vmin=0.6, vmax=1.2); plt.colorbar()    
-    get_peaks(infiles[0], verbose=1)
+    get_peaks(infiles[0], verbose=2)
 
 # Save as tiff
 if False:
@@ -76,7 +76,7 @@ if False:
 ##########################################
 t0 = time.time()
 with Parallel(n_jobs=4) as parallel:
-    results = parallel( delayed(get_peaks)(infile) for infile in infiles )
+    results = parallel( delayed(get_peaks)(infile, verbose=1) for infile in infiles )
 print("\nLoad data and define peak roi: {:.0f} s".format(time.time()-t0))
 
 

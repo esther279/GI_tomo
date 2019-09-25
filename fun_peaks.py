@@ -91,8 +91,7 @@ def LinearSubBKG_temp(data):
    
     
 def get_peaks(infile, verbose=0):
-    #df_peaks = pd.DataFrame()
-    #print(infile)
+    if verbose>0: print(infile)
         
     temp = infile.split('_')
     pos_x = float(temp[5][1:])
@@ -106,7 +105,7 @@ def get_peaks(infile, verbose=0):
     ### Read data
     temp1 = Image.open(infile).convert('I')
     data_infile = np.copy(np.asarray(temp1))
-    if verbose>1:
+    if verbose>2:
         plt.figure(99); plt.clf()
         #plt.pcolormesh(np.log10(data_infile)) #,vmin=0.1,vmax=2.2); 
         plt.imshow(np.log10(data_infile))
@@ -117,85 +116,85 @@ def get_peaks(infile, verbose=0):
     center=[575, 479]; size=[60, 10]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sum002 = np.sum(data) 
 
     # 11L
     center = [525, 735]; size = [180, 10]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sum11L = np.sum(data)      
     
     center=[525, 223]; size=[180, 10]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sum11Lb = np.sum(data)  
     
     # 02L
     center=[603, 787]; size=[30, 10]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sum02L = np.sum(data)    
     
     center=[603, 172]; size=[30, 10]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sum02Lb = np.sum(data)    
  
     # 12L
     center=[589, 848]; size=[58, 6]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sum12L = np.sum(data)       
 
     center=[589, 110]; size=[58, 6]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sum12Lb = np.sum(data)          
 
     # 20L
     center=[323, 903]; size=[30, 15]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sum20L = np.sum(data)       
 
     center=[323, 56]; size=[30, 15]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sum20Lb = np.sum(data)    
 
     # 21L
     center=[280, 936]; size=[40, 15]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sum21L = np.sum(data)       
 
     center=[280, 26]; size=[40, 15]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sum21Lb = np.sum(data)   
 
     # Si
     center=[400, 809]; size=[12, 12]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sumSi = np.sum(data)       
 
     center=[400, 151]; size=[12, 12]
     peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
     [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>0: plot_box(center, size)
+    if verbose>1: plot_box(center, size)
     sumSib = np.sum(data)   
 
     df = pd.DataFrame({'pos_phi':pos_phi,
