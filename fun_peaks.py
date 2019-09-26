@@ -90,7 +90,7 @@ def LinearSubBKG_temp(data):
     return data_sub, BKG
    
     
-def get_peaks(infile, verbose=0):
+def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
     if verbose>0: print(infile)
         
     temp = infile.split('_')
@@ -101,6 +101,11 @@ def get_peaks(infile, verbose=0):
         pos_phi = 360-float(temp[9])/2.0
     else:
         pos_phi = float(temp[9])/2.0
+
+    df = pd.DataFrame({'pos_phi':pos_phi,
+                   'pos_x':pos_x,
+                    'zigzag_n':zigzag_n,
+                    'scan_n': scan_n}, index = [pos_phi])
         
     ### Read data
     temp1 = Image.open(infile).convert('I')
@@ -108,116 +113,45 @@ def get_peaks(infile, verbose=0):
     if verbose>2:
         plt.figure(99); plt.clf()
         #plt.pcolormesh(np.log10(data_infile)) #,vmin=0.1,vmax=2.2); 
-        plt.imshow(np.log10(data_infile))
+        plt.imshow(np.log10(data_infile))      
+
+      
+    ### Define peak roi  
+    peak_list = [
+            # center, size, peak
+            [[575, 479], [60, 10], 'sum002'],
+            # 11L
+            [[525, 735], [180, 10], 'sum11L'],
+            [[525, 223], [180, 10], 'sum11Lb'],
+            # 02L
+            [[603, 787], [30, 10], 'sum02L'],
+            [[603, 172], [30, 10], 'sum02Lb'],
+            # 12L
+            [[589, 848], [58, 6], 'sum12L'], 
+            [[589, 110], [58, 6], 'sum12Lb'],
+            # 20L
+            [[323, 903], [30, 15], 'sum20L'],
+            [[323, 56], [30, 15], 'sum20Lb'],
+            # 21L
+            [[280, 936], [40, 15], 'sum21L'],
+            [[280, 26], [40, 15], 'sum21Lb'],
+            # Si
+            [[400, 809], [12, 12], 'sumSi'],
+            [[400, 151], [12, 12], 'sumSib'],
+            ]
+     
+    for p in peak_list:
+        center = p[0]
+        size = p[1]
+        peak = p[2]
+        if verbose>1: plot_box(center, size) 
         
-        
-    ### Define peak roi   
-    # 00L
-    center=[575, 479]; size=[60, 10]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sum002 = np.sum(data) 
+        peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
+        if flag_LinearSubBKG:
+            [peakarea, BKG] = LinearSubBKG(peakarea)
+        peakarea_sum = np.sum(peakarea)          
+        df[str(peak)] = peakarea_sum
 
-    # 11L
-    center = [525, 735]; size = [180, 10]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sum11L = np.sum(data)      
-    
-    center=[525, 223]; size=[180, 10]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sum11Lb = np.sum(data)  
-    
-    # 02L
-    center=[603, 787]; size=[30, 10]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sum02L = np.sum(data)    
-    
-    center=[603, 172]; size=[30, 10]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sum02Lb = np.sum(data)    
- 
-    # 12L
-    center=[589, 848]; size=[58, 6]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sum12L = np.sum(data)       
-
-    center=[589, 110]; size=[58, 6]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sum12Lb = np.sum(data)          
-
-    # 20L
-    center=[323, 903]; size=[30, 15]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sum20L = np.sum(data)       
-
-    center=[323, 56]; size=[30, 15]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sum20Lb = np.sum(data)    
-
-    # 21L
-    center=[280, 936]; size=[40, 15]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sum21L = np.sum(data)       
-
-    center=[280, 26]; size=[40, 15]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sum21Lb = np.sum(data)   
-
-    # Si
-    center=[400, 809]; size=[12, 12]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sumSi = np.sum(data)       
-
-    center=[400, 151]; size=[12, 12]
-    peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-    [data, BKG] = LinearSubBKG(peakarea)
-    if verbose>1: plot_box(center, size)
-    sumSib = np.sum(data)   
-
-    df = pd.DataFrame({'pos_phi':pos_phi,
-                   'pos_x':pos_x,
-                    'zigzag_n':zigzag_n,
-                    'scan_n': scan_n,
-                    'sum002':sum002,
-                    'sum11L':sum11L,
-                    'sum11Lb':sum11Lb,
-                    'sum02L':sum02L,
-                    'sum02Lb':sum02Lb,
-                    'sum12L':sum12L,
-                    'sum12Lb':sum12Lb,
-                    'sum20L':sum20L,
-                    'sum20Lb':sum20Lb,
-                    'sum21L':sum21L,
-                    'sum21Lb':sum21Lb,
-                    'sumSi':sumSi,
-                    'sumSib':sumSib,
-                    }, index = [pos_phi])
-    
-        #df_peaks = df_peaks.append(df, ignore_index=True)
-    
     return df
 
 
