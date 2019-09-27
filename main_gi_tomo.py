@@ -25,9 +25,9 @@ print('N_files = {}'.format(N_files))
 # e.g. ../raw/C8BTBT_0.1Cmin_tomo_real_9_x-3.600_th0.090_1.00s_2526493_000656_waxs.tiff'
 
 flag_load_raw_data = 0
-flag_get_peaks = 1; flag_LinearSubBKG = 0
+flag_get_peaks = 0; flag_LinearSubBKG = 0
 flag_load_peaks = 1
-flag_sum_peaks = False
+flag_sum_peaks = 1
 flag_tomo = 1
 
 ########################################## 
@@ -107,7 +107,7 @@ if flag_get_peaks:
 # Plot Sino
 ##########################################   
 if flag_load_peaks:
-    df_peaks = pd.read_csv('df_peaks_all_subbgk_1')
+    df_peaks = pd.read_csv('df_peaks_all_withbkg_1')
 data_sort = df_peaks.sort_values(by=['pos_phi', 'pos_x'])
 #data_sort_drop = data_002_sort[data_sort.pos_phi >=0]
 
@@ -122,20 +122,28 @@ axis_x = np.asarray(axis_x)
 
 ##########################################
 # Create projection from pd data
-##########################################   
+########################################## 
+#list_peaks = list(df_peaks.columns[5:])
+list_peaks = ['sum02L','sum20L']
+  
 # Sum over peak sinos
 if flag_sum_peaks:
-    for ii, peak in enumerate(list(df_peaks.columns[6:-2])):
+    for ii, peak in enumerate(list_peaks):
         print(peak)
-        proj_orig = data_sort[peak] # + data_sort['sum11L'] 
+        proj_orig = copy.deepcopy(data_sort[peak]) # + data_sort['sum11L'] 
         proj = proj_orig.values 
         proj = np.reshape(proj, (len(theta), 1, int(len(proj)/len(theta))) )      
         
         proj = proj[:,:,6:]
-        thr = np.mean(proj)*0.5
-        print('thr = {}'.format(thr))
-        proj[proj<thr] = 0
-        proj[150:420,:,:] = 0
+        
+        thr = 2.3e3 #np.mean(proj)*0.5
+        bkg = np.mean(proj)*0.5
+        #print('thr = {}'.format(thr))
+        proj[proj<thr] = bkg
+        #proj[proj>=thr] = 1
+       
+        proj[0:387,:,:] = 0
+        
         if ii==0:
             proj_sum = proj
         else:
@@ -144,26 +152,25 @@ if flag_sum_peaks:
     proj = proj_sum
     
 
-# Create projection from pd data and make tomo 
+# Create projection from pd data and make tomo \
 plt.figure(30, figsize=[20,15]); plt.clf()
-for ii, peak in enumerate(list(df_peaks.columns[5:])):
+for ii, peak in enumerate(list_peaks):
 #if 1:
 #    peak = 'sum20L'
     proj_orig = data_sort[peak] # + data_sort['sum11L'] 
     proj = proj_orig.values
     proj = np.reshape(proj, (len(theta), 1, int(len(proj)/len(theta))) )
     proj = proj[:,:,6:]
-    #proj = pow(proj,1.2)
-    
-    #thr = np.mean(proj)*1.5
+    #proj = pow(proj,1.2)    
+    #thr = 3e5# np.mean(proj)*1.5
     #print('thr = {}'.format(thr))
     #proj[proj<thr] = 0
-    #proj[150:550,:,:] = 0
+    #proj[0:550,:,:] = 0
     
-    # Plot
+    # Plot sino
     plt.figure(30)
     plt.subplot(5,13,ii+1)
-    plt.imshow(np.log10(proj[:,0,:]), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
+    plt.imshow((proj[:,0,:]), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
     plt.axis('off')
     if ii==0: 
         plt.title('{}\n{}'.format(filename, peak), fontweight='bold')
