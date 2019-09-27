@@ -144,7 +144,9 @@ def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
         center = p[0]
         size = p[1]
         peak = p[2]
-        if verbose>1: plot_box(center, size) 
+        if verbose>1: 
+            plot_box(center, size) 
+            plt.text(center[1], center[0], str(peak), color='r')
         
         peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
         if flag_LinearSubBKG:
