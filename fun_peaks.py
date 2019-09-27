@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import pandas as pd
 import tomopy
+import copy
 
 
 def ArrayCrop(data=None, center=None, size=None):
@@ -157,5 +158,14 @@ def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
     return df
 
 
+def check_file_exist(fn):
+    ii=0  
+    fn_out = copy.deepcopy(fn)
+    while os.path.exists(fn_out):
+        ii = ii+1
+        fn_out = fn +'_{:d}'.format(ii)
+    print('Saving to {}'.format(fn_out))
+    
+    return fn_out
 
 

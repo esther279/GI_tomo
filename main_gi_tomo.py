@@ -25,10 +25,10 @@ print('N_files = {}'.format(N_files))
 # e.g. ../raw/C8BTBT_0.1Cmin_tomo_real_9_x-3.600_th0.090_1.00s_2526493_000656_waxs.tiff'
 
 flag_load_raw_data = 0
-flag_get_peaks = 0
+flag_get_peaks = 1; flag_LinearSubBKG = 0
 flag_load_peaks = 1
 flag_sum_peaks = False
-flag_tomo = 0
+flag_tomo = 1
 
 ########################################## 
 # Load all data and plot sum
@@ -61,7 +61,9 @@ if flag_load_raw_data:
         plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(fn_out)
         plt.imshow(np.log10(temp2), vmin=0.6, vmax=1.2); plt.colorbar()    
         get_peaks(infiles[0], verbose=2)
-        plt.savefig(out_dir+filename+'_peak_roi', format='png')
+        fn_out = out_dir+filename+'_peak_roi'
+        fn_out = check_file_exist(fn_out)
+        plt.savefig(fn_out, format='png')
     
     # Save as tiff
     if False:
@@ -85,7 +87,7 @@ if flag_load_raw_data:
 if flag_get_peaks:
     t0 = time.time()
     with Parallel(n_jobs=4) as parallel:
-        results = parallel( delayed(get_peaks)(infile, verbose=1, flag_LinearSubBKG=1) for infile in infiles )
+        results = parallel( delayed(get_peaks)(infile, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG) for infile in infiles )
     print("\nLoad data and define peak roi: {:.0f} s".format(time.time()-t0))
     
     
@@ -97,7 +99,9 @@ if flag_get_peaks:
     print(df_peaks.columns)
     
     # Save 
-    df_peaks.to_csv('df_peaks_all_subbgk_1')
+    fn_out = 'df_peaks_all_subbgk'
+    fn_out = check_file_exist(fn_out)
+    df_peaks.to_csv(fn_out)
  
 ##########################################
 # Plot Sino
@@ -158,7 +162,7 @@ for ii, peak in enumerate(list(df_peaks.columns[5:])):
     
     # Plot
     plt.figure(30)
-    plt.subplot(3,5,ii+1)
+    plt.subplot(5,13,ii+1)
     plt.imshow(np.log10(proj[:,0,:]), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
     plt.axis('off')
     if ii==0: 
@@ -169,9 +173,9 @@ for ii, peak in enumerate(list(df_peaks.columns[5:])):
     elif ii%2: plt.title('{}'.format(peak), fontweight='bold')
     else: plt.title('{}'.format(peak))
 
-    #plt.subplot(5,13,13+ii+1)
-    #plt.imshow(np.log10(proj[:,0,:]), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
-    #plt.colorbar(); plt.axis('off')
+    plt.subplot(5,13,13+ii+1)
+    plt.imshow(np.log10(proj[:,0,:]), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
+    plt.colorbar(); plt.axis('off')
  
     
     ##########################################
@@ -210,8 +214,11 @@ for ii, peak in enumerate(list(df_peaks.columns[5:])):
             if ii%2: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)), fontweight='bold')
             else: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)))
             #plt.colorbar(); plt.show();
-        
-plt.savefig(out_dir+filename+'peaks_sino', format='png')
+  
+fn_out = out_dir+filename+'peaks_sino_tomo'; 
+fn_out = check_file_exist(fn_out)
+plt.savefig(fn_out, format='png')
+
 
     
         
