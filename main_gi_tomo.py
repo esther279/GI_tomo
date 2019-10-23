@@ -211,7 +211,7 @@ for ii, peak in enumerate(list_peaks):
         #recon = tomopy.recon(proj, theta, center=rot_center, algorithm=tomopy.lprec, lpmethod='tv', ncore=1, num_iter=512, reg_par=5e-4)
         
         rot_center = 23#cen_init
-        algorithms = ['fbp', 'mlem', 'tv']
+        algorithms = ['art', 'gridrec', 'tv']
         #plt.figure(50)
         for jj, algo in enumerate(algorithms):
             recon = tomopy.recon(proj, theta, center=rot_center, algorithm=algo)
