@@ -124,7 +124,7 @@ plot_sino(sino_dict, fignum=30, filename=filename, vlog10=[0, 4])
 
 ## Do and plot recon
 if flag_tomo:
-    recon_all = get_recon(sino_dict, fignum=40, algorithms = ['gridrec', 'fbp'])
+    recon_all = get_recon(sino_dict, algorithms = ['gridrec', 'fbp'], fignum=40)
 
     fn_out = out_dir+filename+'peaks_sino_tomo_subbg'+str(flag_LinearSubBKG); 
     fn_out = check_file_exist(fn_out)
@@ -141,49 +141,29 @@ list_peaks_sorted = ['sum20L', 'sum21L', 'sum11L', 'sum12L',  'sum02L']
 for ii in np.arange(0,4):
     list_peaks_sorted.append(list_peaks_sorted[3-ii])
 
-# Alloc array
-proj = copy.deepcopy(data_sort[peak]).values
-sino_alldm = np.zeros([len(theta),  int(len(proj)/len(theta)), len(list_peaks)])
-sino_dm =  np.zeros([len(theta),  int(len(proj)/len(theta))])
+data_sort_dm, sino_dict_dm = get_sino_from_data(df_peaks, list_peaks=list_peaks_sorted, flag_rm_expbg=1, flag_thr=0)
 
-# Get sino for a domain    
-ori_angle = 30*2
-flag_normalize = 0
-width = 0
-for ii, peak in enumerate(list_peaks_sorted[0:2]):
-    proj = copy.deepcopy(data_sort[peak]).values #- data_sort['sumBKG0'].values*4
-    proj = np.reshape(proj, (len(theta), 1, int(len(proj)/len(theta))) )
-
-    print(proj[bkg_max_idx])
-    proj = proj - proj_bkg*proj[bkg_max_idx]
-    #proj = proj[:,:,6:]
-    proj = np.squeeze(proj)
-    if flag_normalize:
-        proj = proj - np.min(proj)
-        proj = proj / np.max(proj)
-    sino_alldm[:,:,ii] = proj[ori_angle,:]
+ori_angle = 16.5 # degree
+width = 1 # pixel
+sino_allpeaks = sino_dict_dm['sino_allpeaks']
+sino_dm = np.zeros([sino_allpeaks.shape[0], sino_allpeaks.shape[1]])
+theta = sino_dict_dm['theta']
+for ii in np.arange(0, sino_allpeaks.shape[2]):
+    sino = sino_allpeaks[:,:,ii]
+    peak = list_peaks[ii] if list_peaks!=[] else ''
+    
     angle =  ori_angle + peak_angles_orig[ii]
     print('angle = {}'.format(angle))
-    #angle = (angle-180) if angle>180 else angle
-    sino_dm[int(angle),:] = get_sino_line(proj,  angle, width) #proj[int(angle),:] 
-    
-# Tomo recon
-proj_dm = np.reshape(sino_dm, [sino_dm.shape[0], 1, sino_dm.shape[1]])
-algo = 'fbp'
-rot_center = tomopy.find_center(proj_dm, theta, init=cen_init, ind=0, tol=0.1)
-recon = tomopy.recon(proj_dm, theta, center=rot_center, algorithm=algo)
-recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
-    
-# Plot sino
-plt.figure(55); plt.clf()
-plt.subplot(121)
-plt.imshow(np.log10(sino_dm[:,:]), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]], vmin=0, vmax=5)
-plt.colorbar()
+    angle_idx = get_idx_angle(theta, theta=angle)
+    sino_dm[angle_idx,:] = get_proj_from_sino(sino,  angle_idx, width) 
 
-plt.subplot(122)
-plt.imshow(recon[0, :,:], cmap='jet') #, vmin=0, vmax=1.5e7)
-plt.title(algo)
-plt.colorbar()
+## Plot sino
+plot_sino(sino, fignum=50, theta = sino_dict_dm['theta'], axis_x = sino_dict_dm['axis_x'], filename=filename+'.sino_dm', vlog10=[0, 5])
+plot_sino(sino_dm, fignum=51, theta = sino_dict_dm['theta'], axis_x = sino_dict_dm['axis_x'], filename=filename+'.sino_dm', vlog10=[0, 5])
+
+# Tomo recon
+recon_all = get_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=27, algorithms = ['gridrec', 'fbp'], fignum=100)
+
 
 
     

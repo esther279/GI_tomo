@@ -86,7 +86,7 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], filename='sino'
         sino_allpeaks = np.reshape(sino_data, (sino_data.shape[0], sino_data.shape[1], 1))
         list_peaks = []
     
-    plt.figure(fignum); plt.clf()    
+    plt.figure(fignum, figsize=[12,12]); plt.clf()    
     Npeaks =  sino_allpeaks.shape[2]
     for ii in np.arange(0, sino_allpeaks.shape[2]):
         sino = sino_allpeaks[:,:,ii]
@@ -109,7 +109,7 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], filename='sino'
         plt.colorbar(); plt.axis('off')
     
 
-def get_recon(sino_data, fignum=40, algorithms = ['art', 'gridrec', 'fbp']):
+def get_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridrec', 'fbp'], fignum=40):
     if type(sino_data)==dict:
         sino_allpeaks = sino_data['sino_allpeaks']
         theta = sino_data['theta']
@@ -120,7 +120,7 @@ def get_recon(sino_data, fignum=40, algorithms = ['art', 'gridrec', 'fbp']):
         sino_allpeaks = np.reshape(sino_data, (sino_data.shape[0], sino_data.shape[1], 1))
         list_peaks = []
     
-    plt.figure(fignum); plt.clf()    
+    plt.figure(fignum, figsize=[12,12]); plt.clf()    
     Npeaks =  sino_allpeaks.shape[2]  
     recon_all = {}
     for ii in np.arange(0, sino_allpeaks.shape[2]):
@@ -135,11 +135,12 @@ def get_recon(sino_data, fignum=40, algorithms = ['art', 'gridrec', 'fbp']):
         
         #rot_center = tomopy.find_center(proj, theta, init=290, ind=0, tol=0.5)
         cen_init = sino.shape[2]/2
-        rot_center = tomopy.find_center(sino, theta, init=cen_init, ind=0, tol=0.1)
-        print('Rotational center: {}'.format(rot_center))
-        if (rot_center>cen_init+5) or (rot_center<cen_init-5):
-            rot_center = sino.shape[2]/2
-            
+        if rot_center<0:
+            rot_center = tomopy.find_center(sino, theta, init=cen_init, ind=0, tol=0.1)
+            print('Rotational center: {}'.format(rot_center))
+            if (rot_center>cen_init+5) or (rot_center<cen_init-5):
+                rot_center = sino.shape[2]/2
+                
         
         ##########################################
         # Tomo reconstruction
@@ -163,13 +164,18 @@ def get_recon(sino_data, fignum=40, algorithms = ['art', 'gridrec', 'fbp']):
             
     return recon_all
     
+ 
+def get_idx_angle(theta_array, theta=0):
+    x = (theta_array==theta).tolist()
+    return x.index(max(x))    
     
-def get_sino_line(proj,  idx, width):
-    line = np.zeros([1, proj.shape[1]])
+
+def get_proj_from_sino(sino,  idx, width):
+    line = np.zeros([1, sino.shape[1]])
     for ii in np.arange(idx-width, idx+width+1):
-        line = line + proj[ii,:]
+        line = line + sino[ii,:]
     
-    line = line / (ii+1)
+    line = line / (width*2+1)
     
     return line
 
