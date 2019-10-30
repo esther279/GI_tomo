@@ -75,7 +75,7 @@ def get_sino_sum(sino_data):
     return sino_sum
         
 
-def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], filename='sino', vlog10=[0, 6]):   
+def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino', vlog10=[0, 6]):   
     if type(sino_data)==dict:
         sino_allpeaks = sino_data['sino_allpeaks']
         theta = sino_data['theta']
@@ -96,7 +96,7 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], filename='sino'
         plt.imshow(sino, cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
         plt.axis('off')
         if ii==0: 
-            plt.title('{}\n{}'.format(filename, peak), fontweight='bold')
+            plt.title('{}\n{}'.format(title_st, peak), fontweight='bold')
             plt.xlabel('pos_x (mm)')
             plt.ylabel('pos_phi (deg)')    
             plt.axis('on')
@@ -164,6 +164,23 @@ def get_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridre
             
     return recon_all
     
+
+def get_combined_sino(sino_dict_dm, list_peaks=[], angle0=0, peak_angles_offset=[0], width=0):
+    sino_allpeaks = sino_dict_dm['sino_allpeaks']
+    theta = sino_dict_dm['theta']
+    
+    sino_dm = np.zeros([sino_allpeaks.shape[0], sino_allpeaks.shape[1]])
+    for ii in np.arange(0, sino_allpeaks.shape[2]):
+        sino = sino_allpeaks[:,:,ii]
+        peak = list_peaks[ii] if list_peaks!=[] else ''
+        
+        angle =  angle0 + peak_angles_offset[ii]
+        print('angle = {}'.format(angle))
+        angle_idx = get_idx_angle(theta, theta=angle)
+        sino_dm[angle_idx,:] = get_proj_from_sino(sino,  angle_idx, width) 
+
+    sino_dict_dm['sino_dm'] = sino_dm
+    return sino_dm
  
 def get_idx_angle(theta_array, theta=0):
     x = (theta_array==theta).tolist()

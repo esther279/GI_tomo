@@ -120,7 +120,7 @@ print(sino_dict['list_peaks'])
 sino_sum = get_sino_sum(sino_dict)
 
 ## Plot sino
-plot_sino(sino_dict, fignum=30, filename=filename, vlog10=[0, 4])
+plot_sino(sino_dict, fignum=30, title_st=filename, vlog10=[0, 4])
 
 ## Do and plot recon
 if flag_tomo:
@@ -135,34 +135,24 @@ if flag_tomo:
 ##########################################
 # Create sino for a domain    
 ##########################################
-#peak_angles_orig =  np.asarray([0, 20.1, 36.1, 55.6, 90, 180-55.6, 180-36.1, 180-20.1, 180])
-peak_angles_orig =  np.asarray([0, 20, 30, 51, 90, 51+65, 30+104, 20+140, 180]*2)
+#peak_angles_offset =  np.asarray([0, 20.1, 36.1, 55.6, 90, 180-55.6, 180-36.1, 180-20.1, 180])
+peak_angles_offset =  np.asarray([0, 20, 30, 51, 90, 51+65, 30+104, 20+140, 180])
 list_peaks_sorted = ['sum20L', 'sum21L', 'sum11L', 'sum12L',  'sum02L']
 for ii in np.arange(0,4):
     list_peaks_sorted.append(list_peaks_sorted[3-ii])
 
 data_sort_dm, sino_dict_dm = get_sino_from_data(df_peaks, list_peaks=list_peaks_sorted, flag_rm_expbg=1, flag_thr=0)
 
-ori_angle = 16.5 # degree
-width = 1 # pixel
-sino_allpeaks = sino_dict_dm['sino_allpeaks']
-sino_dm = np.zeros([sino_allpeaks.shape[0], sino_allpeaks.shape[1]])
-theta = sino_dict_dm['theta']
-for ii in np.arange(0, sino_allpeaks.shape[2]):
-    sino = sino_allpeaks[:,:,ii]
-    peak = list_peaks[ii] if list_peaks!=[] else ''
-    
-    angle =  ori_angle + peak_angles_orig[ii]
-    print('angle = {}'.format(angle))
-    angle_idx = get_idx_angle(theta, theta=angle)
-    sino_dm[angle_idx,:] = get_proj_from_sino(sino,  angle_idx, width) 
+angle0 = 17
+width = 1
+sino_dm = get_combined_sino(sino_dict_dm, list_peaks_sorted, angle0=angle0, peak_angles_offset=peak_angles_offset, width=width)
 
 ## Plot sino
-plot_sino(sino, fignum=50, theta = sino_dict_dm['theta'], axis_x = sino_dict_dm['axis_x'], filename=filename+'.sino_dm', vlog10=[0, 5])
-plot_sino(sino_dm, fignum=51, theta = sino_dict_dm['theta'], axis_x = sino_dict_dm['axis_x'], filename=filename+'.sino_dm', vlog10=[0, 5])
+title = '{}\n sino_dm for angle0={} and width={}'.format(filename, angle0, width)
+plot_sino(sino_dm, theta = sino_dict_dm['theta'], axis_x = sino_dict_dm['axis_x'], title_st=title, vlog10=[0, 5], fignum=50)
 
 # Tomo recon
-recon_all = get_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=27, algorithms = ['gridrec', 'fbp'], fignum=100)
+recon_all = get_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=27, algorithms = ['gridrec', 'fbp'], fignum=51)
 
 
 
