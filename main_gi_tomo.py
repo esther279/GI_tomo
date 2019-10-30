@@ -8,7 +8,10 @@ from PIL import Image
 import pandas as pd
 import tomopy
 from joblib import Parallel, delayed
+from scipy import signal
 from fun_peaks import *
+from fun_tomo_recon import *
+
 
 # /home/etsai/BNL/Research/GIWAXS_tomo_2019C3/RLi/waxs/GI_tomo
 
@@ -25,9 +28,8 @@ print('N_files = {}'.format(N_files))
 # e.g. ../raw/C8BTBT_0.1Cmin_tomo_real_9_x-3.600_th0.090_1.00s_2526493_000656_waxs.tiff'
 
 flag_load_raw_data = 0
-flag_get_peaks = 0; flag_LinearSubBKG = 0
+flag_get_peaks = 0;  flag_LinearSubBKG = 0
 flag_load_peaks = 1
-flag_sum_peaks = 1
 flag_tomo = 1
 
 ########################################## 
@@ -59,8 +61,9 @@ if flag_load_raw_data:
     if True:
         temp2 = np.load(fn_out)
         plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(fn_out)
-        plt.imshow(np.log10(temp2), vmin=0.6, vmax=1.2); plt.colorbar()    
+        plt.imshow(np.log10(temp2), vmin=0.6, vmax=2.5); plt.colorbar()    
         get_peaks(infiles[0], verbose=2)
+        
         fn_out = out_dir+filename+'_peak_roi'
         fn_out = check_file_exist(fn_out)
         plt.savefig(fn_out, format='png')
@@ -99,140 +102,90 @@ if flag_get_peaks:
     print(df_peaks.columns)
     
     # Save 
-    fn_out = 'df_peaks_all_subbgk'
+    fn_out = 'df_peaks_all_subbgk{}'.format(flag_LinearSubBKG)
     fn_out = check_file_exist(fn_out)
     df_peaks.to_csv(fn_out)
  
-##########################################
-# Plot Sino
-##########################################   
-if flag_load_peaks:
-    df_peaks = pd.read_csv('df_peaks_all_withbkg_1')
-data_sort = df_peaks.sort_values(by=['pos_phi', 'pos_x'])
-#data_sort_drop = data_002_sort[data_sort.pos_phi >=0]
-
-theta = data_sort['pos_phi']
-theta = theta.drop_duplicates()
-theta = np.asarray(theta)
-
-axis_x = data_sort['pos_x']
-axis_x = axis_x.drop_duplicates()
-axis_x = np.asarray(axis_x)
-   
 
 ##########################################
-# Create projection from pd data
+# Sino and recon
 ########################################## 
-#list_peaks = list(df_peaks.columns[5:])
-list_peaks = ['sum02L','sum20L']
-  
-# Sum over peak sinos
-if flag_sum_peaks:
-    for ii, peak in enumerate(list_peaks):
-        print(peak)
-        proj_orig = copy.deepcopy(data_sort[peak]) # + data_sort['sum11L'] 
-        proj = proj_orig.values 
-        proj = np.reshape(proj, (len(theta), 1, int(len(proj)/len(theta))) )      
-        
-        proj = proj[:,:,6:]
-        
-        thr = 2.3e3 #np.mean(proj)*0.5
-        bkg = np.mean(proj)*0.5
-        #print('thr = {}'.format(thr))
-        proj[proj<thr] = bkg
-        #proj[proj>=thr] = 1
-       
-        proj[0:387,:,:] = 0
-        
-        if ii==0:
-            proj_sum = proj
-        else:
-            proj_sum = proj_sum + proj
+if flag_load_peaks:
+    df_peaks = pd.read_csv('df_peaks_all_subbg')
 
-    proj = proj_sum
-    
+## Create sino from pd data
+#list_peaks = ['sum12L','sum12Lb']
+data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=[], flag_rm_expbg=1, flag_thr=0)
+print(sino_dict['list_peaks'])
+sino_sum = get_sino_sum(sino_dict)
 
-# Create projection from pd data and make tomo \
-plt.figure(30, figsize=[20,15]); plt.clf()
-for ii, peak in enumerate(list_peaks):
-#if 1:
-#    peak = 'sum20L'
-    proj_orig = data_sort[peak] # + data_sort['sum11L'] 
-    proj = proj_orig.values
+## Plot sino
+plot_sino(sino_dict, fignum=30, filename=filename, vlog10=[0, 4])
+
+## Do and plot recon
+if flag_tomo:
+    recon_all = get_recon(sino_dict, fignum=40, algorithms = ['gridrec', 'fbp'])
+
+    fn_out = out_dir+filename+'peaks_sino_tomo_subbg'+str(flag_LinearSubBKG); 
+    fn_out = check_file_exist(fn_out)
+    plt.savefig(fn_out, format='png')
+
+
+
+##########################################
+# Create sino for a domain    
+##########################################
+#peak_angles_orig =  np.asarray([0, 20.1, 36.1, 55.6, 90, 180-55.6, 180-36.1, 180-20.1, 180])
+peak_angles_orig =  np.asarray([0, 20, 30, 51, 90, 51+65, 30+104, 20+140, 180]*2)
+list_peaks_sorted = ['sum20L', 'sum21L', 'sum11L', 'sum12L',  'sum02L']
+for ii in np.arange(0,4):
+    list_peaks_sorted.append(list_peaks_sorted[3-ii])
+
+# Alloc array
+proj = copy.deepcopy(data_sort[peak]).values
+sino_alldm = np.zeros([len(theta),  int(len(proj)/len(theta)), len(list_peaks)])
+sino_dm =  np.zeros([len(theta),  int(len(proj)/len(theta))])
+
+# Get sino for a domain    
+ori_angle = 30*2
+flag_normalize = 0
+width = 0
+for ii, peak in enumerate(list_peaks_sorted[0:2]):
+    proj = copy.deepcopy(data_sort[peak]).values #- data_sort['sumBKG0'].values*4
     proj = np.reshape(proj, (len(theta), 1, int(len(proj)/len(theta))) )
-    proj = proj[:,:,6:]
-    #proj = pow(proj,1.2)    
-    #thr = 3e5# np.mean(proj)*1.5
-    #print('thr = {}'.format(thr))
-    #proj[proj<thr] = 0
-    #proj[0:550,:,:] = 0
-    
-    # Plot sino
-    plt.figure(30)
-    plt.subplot(5,13,ii+1)
-    plt.imshow((proj[:,0,:]), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
-    plt.axis('off')
-    if ii==0: 
-        plt.title('{}\n{}'.format(filename, peak), fontweight='bold')
-        plt.xlabel('pos_x (mm)')
-        plt.ylabel('pos_phi (deg)')    
-        plt.axis('on')
-    elif ii%2: plt.title('{}'.format(peak), fontweight='bold')
-    else: plt.title('{}'.format(peak))
 
-    plt.subplot(5,13,13+ii+1)
-    plt.imshow(np.log10(proj[:,0,:]), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
-    plt.colorbar(); plt.axis('off')
- 
+    print(proj[bkg_max_idx])
+    proj = proj - proj_bkg*proj[bkg_max_idx]
+    #proj = proj[:,:,6:]
+    proj = np.squeeze(proj)
+    if flag_normalize:
+        proj = proj - np.min(proj)
+        proj = proj / np.max(proj)
+    sino_alldm[:,:,ii] = proj[ori_angle,:]
+    angle =  ori_angle + peak_angles_orig[ii]
+    print('angle = {}'.format(angle))
+    #angle = (angle-180) if angle>180 else angle
+    sino_dm[int(angle),:] = get_sino_line(proj,  angle, width) #proj[int(angle),:] 
     
-    ##########################################
-    # Find center
-    ##########################################   
-    if flag_tomo:
-        #proj = tomopy.minus_log(proj)
-        flat = np.ones((1,1,proj.shape[2]))
-        dark = np.zeros((1,1,proj.shape[2]))
-        proj = tomopy.normalize(proj, flat, dark) # (proj-dark)/(flat-dark)
-        
-        #rot_center = tomopy.find_center(proj, theta, init=290, ind=0, tol=0.5)
-        cen_init = proj.shape[2]/2
-        rot_center = tomopy.find_center(proj, theta, init=cen_init, ind=0, tol=0.1)
-        print('Rotational center: {}'.format(rot_center))
-        if (rot_center>cen_init+5) or (rot_center<cen_init-5):
-            rot_center = proj.shape[2]/2
-            
-        
-        ##########################################
-        # Tomo reconstruction
-        ##########################################      
-        # Keyword "algorithm" must be one of ['art', 'bart', 'fbp', 'gridrec', 'mlem', 'osem', 'ospml_hybrid', 
-        # 'ospml_quad', 'pml_hybrid', 'pml_quad', 'sirt', 'tv', 'grad'], or a Python method.
-        
-        #recon = tomopy.recon(proj, theta, center=rot_center, algorithm=tomopy.lprec, lpmethod='tv', ncore=1, num_iter=512, reg_par=5e-4)
-        
-        rot_center = 23#cen_init
-        algorithms = ['fbp', 'mlem', 'tv']
-        #plt.figure(50)
-        for jj, algo in enumerate(algorithms):
-            recon = tomopy.recon(proj, theta, center=rot_center, algorithm=algo)
-            recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
-            plt.subplot(5, 13, (jj+2)*13+ii+1)
-            plt.imshow(recon[0, :,:], cmap='jet') #, vmin=0, vmax=1.5e7)
-            if ii%2: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)), fontweight='bold')
-            else: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)))
-            #plt.colorbar(); plt.show();
-  
-fn_out = out_dir+filename+'peaks_sino_tomo'; 
-fn_out = check_file_exist(fn_out)
-plt.savefig(fn_out, format='png')
+# Tomo recon
+proj_dm = np.reshape(sino_dm, [sino_dm.shape[0], 1, sino_dm.shape[1]])
+algo = 'fbp'
+rot_center = tomopy.find_center(proj_dm, theta, init=cen_init, ind=0, tol=0.1)
+recon = tomopy.recon(proj_dm, theta, center=rot_center, algorithm=algo)
+recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
+    
+# Plot sino
+plt.figure(55); plt.clf()
+plt.subplot(121)
+plt.imshow(np.log10(sino_dm[:,:]), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]], vmin=0, vmax=5)
+plt.colorbar()
+
+plt.subplot(122)
+plt.imshow(recon[0, :,:], cmap='jet') #, vmin=0, vmax=1.5e7)
+plt.title(algo)
+plt.colorbar()
 
 
-    
-        
-        
-        
-    
-    
     
     
     

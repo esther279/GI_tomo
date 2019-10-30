@@ -139,6 +139,8 @@ def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
             # Si
             [[400, 809], [12, 12], 'sumSi'],
             [[400, 151], [12, 12], 'sumSib'],
+            # background
+            [[560, 440], [30,30], 'sumBKG0'],
             ]
      
     for p in peak_list:
