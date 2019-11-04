@@ -106,7 +106,8 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
     
         plt.subplot(2,Npeaks,Npeaks+ii+1)
         plt.imshow(np.log10(sino), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]], vmin=vlog10[0], vmax=vlog10[1])
-        plt.colorbar(); plt.axis('off')
+        #plt.colorbar(); 
+        plt.axis('off')
     
 
 def get_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridrec', 'fbp'], fignum=40):

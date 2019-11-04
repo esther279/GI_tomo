@@ -92,16 +92,17 @@ def LinearSubBKG_temp(data):
    
     
 def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
-    if verbose>0: print(infile)
-        
+    if verbose>0: print(infile)        
+    if verbose>1: print('Parse param manually for now..\n')
+    
     temp = infile.split('_')
-    pos_x = float(temp[5][1:])
-    zigzag_n = int(temp[4])
-    scan_n = int(temp[8])
+    pos_x = float(temp[4][1:])
+    zigzag_n = int(temp[3])
+    scan_n = int(temp[7])
     if zigzag_n%2==0:
-        pos_phi = 360-float(temp[9])/2.0
+        pos_phi = 360-float(temp[8])/2.0
     else:
-        pos_phi = float(temp[9])/2.0
+        pos_phi = float(temp[8])/2.0
 
     df = pd.DataFrame({'pos_phi':pos_phi,
                    'pos_x':pos_x,
@@ -125,16 +126,16 @@ def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
             [[525, 735], [180, 10], 'sum11L'],
             [[525, 223], [180, 10], 'sum11Lb'],
             # 02L
-            [[603, 787], [30, 10], 'sum02L'],
+            [[603, 787-3], [30, 10], 'sum02L'],
             [[603, 172], [30, 10], 'sum02Lb'],
             # 12L
             [[589, 848], [58, 6], 'sum12L'], 
             [[589, 110], [58, 6], 'sum12Lb'],
             # 20L
-            [[323, 903], [30, 15], 'sum20L'],
+            [[323-6, 903+2], [60, 15], 'sum20L'],
             [[323, 56], [30, 15], 'sum20Lb'],
             # 21L
-            [[280, 936], [40, 15], 'sum21L'],
+            [[280, 936+2], [40, 15], 'sum21L'],
             [[280, 26], [40, 15], 'sum21Lb'],
             # Si
             [[400, 809], [12, 12], 'sumSi'],
@@ -145,6 +146,7 @@ def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
      
     for p in peak_list:
         center = p[0]
+        center[1] = center[1]+5 if center[1] <470 else center[1]
         size = p[1]
         peak = p[2]
         if verbose>1: 
