@@ -93,22 +93,26 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
         peak = list_peaks[ii] if list_peaks!=[] else ''
         
         plt.subplot(2,Npeaks,ii+1)
-        plt.imshow(sino, cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
+        plt.imshow(sino, cmap='jet', aspect='auto') #, extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
         plt.axis('off')
         if ii==0: 
             plt.title('{}\n{}'.format(title_st, peak), fontweight='bold')
-            plt.xlabel('pos_x (mm)')
-            plt.ylabel('pos_phi (deg)')    
-            plt.axis('on')
+            plt.axis('on');
         elif ii%2: plt.title('{}'.format(peak), fontweight='bold')
         else: plt.title('{}'.format(peak))
-        #plt.colorbar()
-    
+        v1 = np.linspace(sino.min(), sino.max(), 2, endpoint=True)
+        cb = plt.colorbar(orientation='horizontal', pad=0.05, ticks=v1)
+        cb.ax.set_xticklabels(["{:.1e}".format(v) if v>0 else "" for v in v1])
+        
         plt.subplot(2,Npeaks,Npeaks+ii+1)
         plt.imshow(np.log10(sino), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]], vmin=vlog10[0], vmax=vlog10[1])
-        #plt.colorbar(); 
-        plt.axis('off')
-    
+        if ii==0: 
+            plt.axis('on'); plt.title('log10')
+            plt.xlabel('pos_x (mm)')
+            plt.ylabel('pos_phi (deg)')    
+        else: plt.axis('off')
+        if ii==sino_allpeaks.shape[2]-1:
+            plt.colorbar(orientation='horizontal', pad=0.01)    
 
 def get_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridrec', 'fbp'], fignum=40):
     if type(sino_data)==dict:
@@ -134,9 +138,8 @@ def get_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridre
         dark = np.zeros((1,1,sino.shape[2]))
         sino = tomopy.normalize(sino, flat, dark) # (sino-dark)/(flat-dark)
         
-        #rot_center = tomopy.find_center(proj, theta, init=290, ind=0, tol=0.5)
         cen_init = sino.shape[2]/2
-        if rot_center<0:
+        if rot_center<=0:
             rot_center = tomopy.find_center(sino, theta, init=cen_init, ind=0, tol=0.1)
             print('Rotational center: {}'.format(rot_center))
             if (rot_center>cen_init+5) or (rot_center<cen_init-5):

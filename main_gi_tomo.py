@@ -20,15 +20,16 @@ from fun_tomo_recon import *
 ##########################################
 source_dir = '../../raw/'
 out_dir = '../results/'
-infiles = glob.glob(os.path.join(source_dir, '*BTBT_2nd_tomo_*.tiff'))
+infiles = glob.glob(os.path.join(source_dir, '*TOMO_sample3_T1_*.tiff'))
 flag_load_raw_data = 1
 flag_get_peaks = 0;  flag_LinearSubBKG = 0
 flag_load_peaks = 0
 flag_tomo = 0
+# TOMO_sample3_T1_33_x1.200_th0.120_1.00s_2588547_000692_waxs.tiff 
 
 #for ii in [2,3]: infiles.extend(glob.glob(os.path.join(source_dir, '*tomo_real_*00{}*.tiff'.format(ii))))
 # e.g. ../raw/C8BTBT_0.1Cmin_tomo_real_9_x-3.600_th0.090_1.00s_2526493_000656_waxs.tiff'
-filename = infiles[0][infiles[0].find('raw')+4:infiles[0].find('tomo_')+5]
+filename = infiles[0][infiles[0].find('TOMO'):infiles[0].find('T1_')+3]
 N_files = len(infiles); print('N_files = {}'.format(N_files))
 if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 
@@ -38,19 +39,20 @@ if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 if flag_load_raw_data:
     t0 = time.time()   
     for ii, infile in enumerate(infiles):
-        print("{}/{}, {}".format(ii, N_files, infile))
-        temp = Image.open(infile).convert('I')
-        data = np.copy(np.asarray(temp))
-        if ii==0:
-            data_sum = data
-        else:
-            data_sum = data_sum+data
-    data_avg = data_sum/np.size(infiles)    
+        if ii%10==0: # Quick checck peak positions
+            print("{}/{}, {}".format(ii, N_files, infile))
+            temp = Image.open(infile).convert('I')
+            data = np.copy(np.asarray(temp))
+            if ii==0:
+                data_sum = data
+            else:
+                data_sum = data_sum+data
+    data_avg = data_sum/np.size(infiles)*10    
     print("Data loading: {:.0f} s".format(time.time()-t0))
         
     # Plot
     plt.figure(1); plt.clf()
-    plt.imshow(np.log10(data_avg), vmin=0.6, vmax=1)
+    plt.imshow(np.log10(data_avg), vmin=0.6, vmax=1.5)
     plt.colorbar()
     plt.title('Average over {} data \n {}'.format(N_files,infiles[0]))
     fn_out = out_dir+filename+'_avg'
@@ -58,14 +60,14 @@ if flag_load_raw_data:
     plt.savefig(fn_out, format='png')
 
     # Save as npy
-    fn_out = out_dir+'data_avg.npy'
+    fn_out = out_dir+'data_avg'
     fn_out = check_file_exist(fn_out)
     np.save(fn_out, data_avg)
     #### Load and plot to define roi
     if True:
-        temp2 = np.load(fn_out)
+        temp2 = np.load(fn_out+'.npy')
         plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(fn_out)
-        plt.imshow(np.log10(temp2), vmin=0.3, vmax=0.8); plt.colorbar()    
+        plt.imshow(np.log10(temp2), vmin=0.3, vmax=1.5); plt.colorbar()    
         get_peaks(infiles[0], verbose=2)
         
         fn_out = out_dir+filename+'_peak_roi'
@@ -99,7 +101,8 @@ if flag_get_peaks:
             results = parallel( delayed(get_peaks)(infile, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG) for infile in infiles )
     else:
         results = []
-        for infile in infiles:
+        for ii, infile in enumerate(infiles):
+            #if ii%10==0:
             temp = get_peaks(infile, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG)
             results.append(temp)
     print("\nLoad data and define peak roi: {:.0f} s".format(time.time()-t0))
@@ -125,8 +128,19 @@ if flag_load_peaks:
     df_peaks = pd.read_csv(out_dir+'df_peaks_all_subbgk{}'.format(flag_LinearSubBKG))
 
 ## Create sino from pd data
-#list_peaks = ['sum12L','sum12Lb']
-data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=[], flag_rm_expbg=0, flag_thr=0)
+list_peaks = ['sum002',
+ 'sum11L',
+ 'sum11Lb',
+ 'sum02L',
+ 'sum02Lb',
+ 'sum12L',
+ 'sum12Lb',
+ 'sum20L',
+ 'sum20Lb',
+ 'sum21L',
+ 'sum21Lb',
+ 'sumBKG0']
+data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=0, flag_thr=0)
 print(sino_dict['list_peaks'])
 sino_sum = get_sino_sum(sino_dict)
 
@@ -138,7 +152,7 @@ plt.savefig(fn_out, format='png')
     
 ## Do and plot recon
 if flag_tomo:
-    recon_all = get_recon(sino_dict, algorithms = ['gridrec', 'fbp'], fignum=40)
+    recon_all = get_recon(sino_dict, rot_center=-1, algorithms = ['gridrec', 'fbp'], fignum=40)
 
     fn_out = out_dir+filename+'peaks_sino_tomo_subbg'+str(flag_LinearSubBKG); 
     fn_out = check_file_exist(fn_out)

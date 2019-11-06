@@ -132,10 +132,10 @@ def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
             [[589, 848], [58, 6], 'sum12L'], 
             [[589, 110], [58, 6], 'sum12Lb'],
             # 20L
-            [[323-6, 903+2], [60, 15], 'sum20L'],
+            [[323-6, 903], [60, 15], 'sum20L'],
             [[323, 56], [30, 15], 'sum20Lb'],
             # 21L
-            [[280, 936+2], [40, 15], 'sum21L'],
+            [[280, 936], [40, 15], 'sum21L'],
             [[280, 26], [40, 15], 'sum21Lb'],
             # Si
             [[400, 809], [12, 12], 'sumSi'],
@@ -146,7 +146,7 @@ def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
      
     for p in peak_list:
         center = p[0]
-        center[1] = center[1]+5 if center[1] <470 else center[1]
+        #center[1] = center[1]+5 if center[1] <470 else center[1]
         size = p[1]
         peak = p[2]
         if verbose>1: 
