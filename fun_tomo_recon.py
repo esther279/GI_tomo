@@ -169,26 +169,32 @@ def get_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridre
     return recon_all
     
 
-def get_combined_sino(sino_dict_dm, list_peaks=[], angle0=0, peak_angles_offset=[0], width=0):
-    sino_allpeaks = sino_dict_dm['sino_allpeaks']
-    theta = sino_dict_dm['theta']
+def get_combined_sino(sino_dict, list_peaks_angles, width=0):
+    sino_allpeaks = sino_dict['sino_allpeaks']
+    theta = sino_dict['theta']
+    list_peaks = sino_dict['list_peaks']
+    
+    peaks = np.asarray(list_peaks_angles['peak'])
+    angles = np.asarray(list_peaks_angles['angle'])
     
     sino_dm = np.zeros([sino_allpeaks.shape[0], sino_allpeaks.shape[1]])
-    for ii in np.arange(0, sino_allpeaks.shape[2]):
-        sino = sino_allpeaks[:,:,ii]
-        peak = list_peaks[ii] if list_peaks!=[] else ''
-        
-        angle =  angle0 + peak_angles_offset[ii]
+    for ii in np.arange(0,len(list_peaks_angles)):
+        idx = list_peaks.index(peaks[ii])
+        sino = sino_allpeaks[:,:,idx]  # get the sino for this peak (eg 'sum11L')
+        angle = angles[ii]
         print('angle = {}'.format(angle))
+        
         angle_idx = get_idx_angle(theta, theta=angle)
-        sino_dm[angle_idx,:] = get_proj_from_sino(sino,  angle_idx, width) 
+        temp = get_proj_from_sino(sino,  angle_idx, width)  # get the projection at the angle        
+        sino_dm[angle_idx-width:angle_idx+width+1, :] = temp
 
-    sino_dict_dm['sino_dm'] = sino_dm
+    sino_dict['sino_dm'] = sino_dm
     return sino_dm
  
 def get_idx_angle(theta_array, theta=0):
-    x = (theta_array==theta).tolist()
-    return x.index(max(x))    
+    theta =theta%360
+    x = abs(theta_array-theta).tolist()
+    return x.index(min(x))    
     
 
 def get_proj_from_sino(sino,  idx, width):
@@ -198,5 +204,31 @@ def get_proj_from_sino(sino,  idx, width):
     
     line = line / (width*2+1)
     
+    line = line-np.min(line)
+    line = line/np.max(line)
+    
     return line
 
+def plot_angles(angles_deg, fignum=100, color='r'):
+    angles_deg = np.asarray(angles_deg)
+    angles_rad = np.asarray(angles_deg)/180*np.pi
+    ones = np.ones(len(angles_deg))
+    
+    plt.figure(fignum); plt.clf()
+    ax = plt.subplot(111, projection='polar')
+    ax.bar(angles_rad, ones, width=ones*0.01, color=color, alpha=0.4)
+    ax.set_rticks([]) 
+    
+    for ii, angle in enumerate(angles_rad):
+        ax.text(angle, 1, str(angles_deg[ii]), fontweight='bold', color=color)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
