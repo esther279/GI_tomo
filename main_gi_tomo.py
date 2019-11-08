@@ -165,7 +165,7 @@ if flag_tomo:
 ##########################################
 # Create sino for a domain    
 ##########################################
-##  Specify the angles to include for a certain domain
+##  Specify the angles to include for a certain domain by looking at the sino for a peak
 x = {}; jj=0
 #sum20L
 x[jj] = pd.DataFrame([[29, 'sum20L']], columns=['angle','peak']); jj = jj+1
@@ -187,29 +187,36 @@ x[jj] = pd.DataFrame([[79+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[147+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
 #sum02L
 #x[jj] = pd.DataFrame([[112, 'sum02L']], columns=['angle','peak']); jj = jj+1
-list_peaks_angles = pd.concat(x)
-print(list_peaks_angles.sort_values('angle'))
-
-## A different domain
-angles_old = list_peaks_angles['angle']
-angles_new = angles_old + 12
-list_peaks_angles['angle'] = angles_new
+list_peaks_angles_orig = pd.concat(x)
+print(list_peaks_angles_orig.sort_values('angle'))
+list_peaks_angles = list_peaks_angles_orig.copy()
 
 
-## Get sino
-width = 0
-sino_dm = get_combined_sino(sino_dict, list_peaks_angles, width=width)
-## Plot sino
-title = '{}\n sino_dm for angle0={} and width={}'.format(filename, angle0, width)
-plot_sino(sino_dm, theta = sino_dict_dm['theta'], axis_x = sino_dict_dm['axis_x'], title_st=title, vlog10=[-0.1, 0.1], fignum=50)
-plot_angles(list_peaks_angles['angle'], fignum=51)
+## Different domains
+domain_angle_offset = [-12, -10, -4, 0, 2, 6, 8, 12,14, 24]
+plt.figure(100, figsize=[18, 10]); plt.clf()
+for ii, offset in enumerate(domain_angle_offset):  
+    print(offset)
+    angles_old = list_peaks_angles_orig['angle']
+    angles_new = angles_old + offset
+    list_peaks_angles['angle'] = angles_new
 
-
-# Tomo recon
-recon_all = get_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['gridrec', 'fbp'], fignum=55)
-
-
-
+    ## Get sino
+    width = 1
+    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=1)
+    ## Plot sino
+    title_st = '{}\n offset={} and width={}'.format(filename, offset, width)
+    #plot_sino(sino_dm, theta = sino_dict_dm['theta'], axis_x = sino_dict_dm['axis_x'], title_st=title_st, vlog10=[-0.1, 0.1], fignum=50)
+    #plot_angles(list_peaks_angles['angle'], fignum=51)    
+    
+    # Tomo recon
+    plt.subplot(1,len(domain_angle_offset),ii+1)
+    title_st = 'offset={}\nwidth={}'.format(offset, width)
+    recon_all = get_plot_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
+    plt.show()
+    
+    
+    
 
     
     

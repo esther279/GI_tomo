@@ -114,7 +114,7 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
         if ii==sino_allpeaks.shape[2]-1:
             plt.colorbar(orientation='horizontal', pad=0.01)    
 
-def get_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridrec', 'fbp'], fignum=40):
+def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridrec', 'fbp'], title_st='recon', fignum=40, colorbar=False):
     if type(sino_data)==dict:
         sino_allpeaks = sino_data['sino_allpeaks']
         theta = sino_data['theta']
@@ -125,7 +125,7 @@ def get_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridre
         sino_allpeaks = np.reshape(sino_data, (sino_data.shape[0], sino_data.shape[1], 1))
         list_peaks = []
     
-    plt.figure(fignum, figsize=[12,12]); plt.clf()    
+    if fignum>0: plt.figure(fignum, figsize=[12,12]); plt.clf()    
     Npeaks =  sino_allpeaks.shape[2]  
     recon_all = {}
     for ii in np.arange(0, sino_allpeaks.shape[2]):
@@ -159,17 +159,24 @@ def get_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridre
         for jj, algo in enumerate(algorithms):
             recon = tomopy.recon(sino, theta, center=rot_center, algorithm=algo)
             recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
-            plt.subplot(len(algorithms), Npeaks, (jj)*Npeaks+ii+1)
+            if fignum>0: plt.subplot(len(algorithms), Npeaks, (jj)*Npeaks+ii+1)
             plt.imshow(recon[0, :,:], cmap='jet') #, vmin=0, vmax=1.5e7)
-            if ii%2: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)), fontweight='bold')
-            else: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)))
-            #plt.colorbar(); plt.show();
+            if title_st==[]:
+                if ii%2: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)), fontweight='bold')
+                else: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)))
+            else:
+                plt.title(title_st)
+
             recon_all[peak+'_'+algo] = recon
+            if colorbar:
+                v1 = np.linspace(recon.min(), recon.max(), 2, endpoint=True)
+                cb = plt.colorbar(orientation='horizontal', pad=0.05, ticks=v1)
+                cb.ax.set_xticklabels(["{:.1f}".format(v) if v>0 else "" for v in v1])
             
     return recon_all
     
 
-def get_combined_sino(sino_dict, list_peaks_angles, width=0):
+def get_combined_sino(sino_dict, list_peaks_angles, width=0, verbose=0):
     sino_allpeaks = sino_dict['sino_allpeaks']
     theta = sino_dict['theta']
     list_peaks = sino_dict['list_peaks']
@@ -177,18 +184,21 @@ def get_combined_sino(sino_dict, list_peaks_angles, width=0):
     peaks = np.asarray(list_peaks_angles['peak'])
     angles = np.asarray(list_peaks_angles['angle'])
     
+    if verbose>0: print('------')
     sino_dm = np.zeros([sino_allpeaks.shape[0], sino_allpeaks.shape[1]])
     for ii in np.arange(0,len(list_peaks_angles)):
         idx = list_peaks.index(peaks[ii])
         sino = sino_allpeaks[:,:,idx]  # get the sino for this peak (eg 'sum11L')
         angle = angles[ii]
-        print('angle = {}'.format(angle))
+        if verbose>0: print('angle = {}, peak = {}'.format(angle, peaks[ii]))
         
         angle_idx = get_idx_angle(theta, theta=angle)
         temp = get_proj_from_sino(sino,  angle_idx, width)  # get the projection at the angle        
         sino_dm[angle_idx-width:angle_idx+width+1, :] = temp
 
     sino_dict['sino_dm'] = sino_dm
+    if verbose>0: print('------')
+    
     return sino_dm
  
 def get_idx_angle(theta_array, theta=0):
@@ -202,8 +212,8 @@ def get_proj_from_sino(sino,  idx, width):
     for ii in np.arange(idx-width, idx+width+1):
         line = line + sino[ii,:]
     
-    line = line / (width*2+1)
-    
+    line = line / (width*2+1)    
+    ## Normalize
     line = line-np.min(line)
     line = line/np.max(line)
     
