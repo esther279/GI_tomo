@@ -165,17 +165,7 @@ if flag_tomo:
 ##########################################
 # Create sino for a domain    
 ##########################################
-#peak_angles_offset =  np.asarray([0, 20.1, 36.1, 55.6, 90, 180-55.6, 180-36.1, 180-20.1, 180])
-peak_angles_offset =  np.asarray([0, 20, 30, 51, 90, 51+65, 30+104, 20+140, 180])
-list_peaks_sorted = ['sum20L', 'sum21L', 'sum11L', 'sum12L',  'sum02L']
-for ii in np.arange(0,4):
-    list_peaks_sorted.append(list_peaks_sorted[3-ii])
-
-data_sort_dm, sino_dict_dm = get_sino_from_data(df_peaks, list_peaks=list_peaks_sorted, flag_rm_expbg=1, flag_thr=0)
-
-
-#angle0 = 29
-#peak_angles = angle0+peak_angles_offset
+##  Specify the angles to include for a certain domain
 x = {}; jj=0
 #sum20L
 x[jj] = pd.DataFrame([[29, 'sum20L']], columns=['angle','peak']); jj = jj+1
@@ -196,17 +186,24 @@ x[jj] = pd.DataFrame([[147, 'sum12L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[79+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[147+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
 #sum02L
-x[jj] = pd.DataFrame([[112, 'sum02L']], columns=['angle','peak']); jj = jj+1
+#x[jj] = pd.DataFrame([[112, 'sum02L']], columns=['angle','peak']); jj = jj+1
 list_peaks_angles = pd.concat(x)
 print(list_peaks_angles.sort_values('angle'))
 
+## A different domain
+angles_old = list_peaks_angles['angle']
+angles_new = angles_old + 12
+list_peaks_angles['angle'] = angles_new
+
+
+## Get sino
 width = 0
 sino_dm = get_combined_sino(sino_dict, list_peaks_angles, width=width)
-
 ## Plot sino
 title = '{}\n sino_dm for angle0={} and width={}'.format(filename, angle0, width)
 plot_sino(sino_dm, theta = sino_dict_dm['theta'], axis_x = sino_dict_dm['axis_x'], title_st=title, vlog10=[-0.1, 0.1], fignum=50)
 plot_angles(list_peaks_angles['angle'], fignum=51)
+
 
 # Tomo recon
 recon_all = get_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['gridrec', 'fbp'], fignum=55)
