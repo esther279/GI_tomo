@@ -141,7 +141,7 @@ list_peaks = ['sum002',
  'sum21Lb',
  'sumBKG0']
 list_peaks = []
-data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=0, flag_thr=0)
+data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=1, flag_thr=0)
 print(sino_dict['list_peaks'])
 sino_sum = get_sino_sum(sino_dict)
 
@@ -193,8 +193,8 @@ list_peaks_angles = list_peaks_angles_orig.copy()
 
 
 ## Different domains
-domain_angle_offset = [-12, -10, -4, 0, 2, 6, 8, 12,14, 24]
-plt.figure(100, figsize=[18, 10]); plt.clf()
+domain_angle_offset = [-12, -10, -4, -0.5, 0, 0.5, 1,2, 6, 8, 12, 13, 19, 24]
+plt.figure(100, figsize=[20, 10]); plt.clf()
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
     angles_old = list_peaks_angles_orig['angle']
@@ -202,7 +202,7 @@ for ii, offset in enumerate(domain_angle_offset):
     list_peaks_angles['angle'] = angles_new
 
     ## Get sino
-    width = 1
+    width = 0
     sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=1)
     ## Plot sino
     title_st = '{}\n offset={} and width={}'.format(filename, offset, width)
@@ -210,13 +210,17 @@ for ii, offset in enumerate(domain_angle_offset):
     #plot_angles(list_peaks_angles['angle'], fignum=51)    
     
     # Tomo recon
-    plt.subplot(1,len(domain_angle_offset),ii+1)
+    plt.subplot(2,len(domain_angle_offset),ii+1)
+    title_st = 'offset={}$^\circ$\nwidth={}'.format(offset, width)
+    recon_all = get_plot_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
+    
+    # Another width
+    width = 1
+    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=1)
+    plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
     title_st = 'offset={}\nwidth={}'.format(offset, width)
     recon_all = get_plot_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
-    plt.show()
-    
-    
-    
+
 
     
     

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import copy
 import tomopy
 
-def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0):
+def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0, flag_align=1):
     
     if list_peaks==[]:
         aa = [1 if 'sum' in temp else 0 for temp in data.keys()]
@@ -46,6 +46,12 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0):
             print('thr = {}'.format(thr))
             proj[proj<thr] = 0
             #proj[proj>=thr] = 1
+            
+        if flag_align:                
+            ## Manually align sino
+            old = proj[:,31]
+            proj[:,31] = np.roll(old,-1)   
+            
         
         sino_allpeaks[:,:,ii] = proj
         
@@ -172,6 +178,7 @@ def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'g
                 v1 = np.linspace(recon.min(), recon.max(), 2, endpoint=True)
                 cb = plt.colorbar(orientation='horizontal', pad=0.05, ticks=v1)
                 cb.ax.set_xticklabels(["{:.1f}".format(v) if v>0 else "" for v in v1])
+            plt.axis('off')
             
     return recon_all
     
