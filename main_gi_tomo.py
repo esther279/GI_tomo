@@ -136,7 +136,7 @@ list_peaks = ['sum002',
  'sum21Lb',
  'sumBKG0']
 list_peaks = []
-data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=1, flag_thr=1000)
+data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=1, flag_thr=1)
 print(sino_dict['list_peaks'])
 sino_sum = get_sino_sum(sino_dict)
 
@@ -155,11 +155,21 @@ if flag_tomo:
     fn_out = check_file_exist(fn_out)
     plt.savefig(fn_out, format='png')
 
+   
+# =============================================================================
+# Label peak positons (deg) a sino
+# =============================================================================
+peak =  'sum11L'
+sino, sum_sino, theta = get_sino_from_a_peak(sino_dict, peak) # which peak roi
+plt.figure(10, figsize=[15, 8]); plt.clf()
+plt.plot(theta, sum_sino); #plt.ylim(0, 2e7)
+label_peaks(line_x, line_y)
+plt.title(peak)
+
 
 # =============================================================================
 # Create sino for a domain        
 # =============================================================================
-    
 ## Specify the angles to include for a certain domain by looking at the sino for a peak
 x = {}; jj=0
 #sum20L
@@ -216,15 +226,6 @@ for ii, offset in enumerate(domain_angle_offset):
     plt.subplot(3,len(domain_angle_offset),len(domain_angle_offset)*2+ii+1)
     title_st = 'offset={}$^\circ$\nwidth={}'.format(offset, width)
     recon_all = get_plot_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
-
-   
-# =============================================================================
-#     
-# =============================================================================
-
-    
-    
-
 
 
 

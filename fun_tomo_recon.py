@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 import tomopy
+from scipy.signal import find_peaks
 
 # =============================================================================
 # Load dataframe into a dictionary and do preprocessing
@@ -209,9 +210,7 @@ def get_combined_sino(sino_dict, list_peaks_angles, width=0, verbose=0):
     if verbose>0: print('------')
     sino_dm = np.zeros([sino_allpeaks.shape[0], sino_allpeaks.shape[1]])
     for ii in np.arange(0,len(list_peaks_angles)):
-        #idx = list_peaks.index(peaks[ii])
-        #sino = sino_allpeaks[:,:,idx]  # get the sino for this peak (eg 'sum11L')
-        get_sino_a_peak(sino_dict, peaks[ii])
+        sino = get_sino_from_a_peak(sino_dict, peaks[ii])  # get the sino for this peak (eg 'sum11L')
         angle = angles[ii]
         if verbose>0: print('angle = {}, peak = {}'.format(angle, peaks[ii]))
         
@@ -226,15 +225,16 @@ def get_combined_sino(sino_dict, list_peaks_angles, width=0, verbose=0):
 
 
 # =============================================================================
-# Get the sino for a cetern peak
+# Get the sino for a certain peak (eg 'sum11L')
 # =============================================================================
-def get_sino_a_peak(sino_dict, peak):
+def get_sino_from_a_peak(sino_dict, peak):
     sino_allpeaks = sino_dict['sino_allpeaks']
     list_peaks = sino_dict['list_peaks']
+    theta = sino_dict['theta']
     idx = list_peaks.index(peak)
     sino = sino_allpeaks[:,:,idx]
-    
-    return sino
+    sum_sino = np.sum(sino, 1)   
+    return sino, sum_sino, theta
 
 # =============================================================================
 # Get the index of the nearest angle in deg
@@ -275,8 +275,22 @@ def plot_angles(angles_deg, fignum=100, color='r'):
     for ii, angle in enumerate(angles_rad):
         ax.text(angle, 1, str(angles_deg[ii]), fontweight='bold', color=color)
     
+# =============================================================================
+#  Find and label peaks   
+# =============================================================================
+def label_peaks(line_x, line_y):
+    peaks, _ = find_peaks(line_y, height=np.mean(line_y)*0.3) #, height=0, width=2, prominence=(0.2, None))
+    print(peaks)
+    ylim = [np.nanmin(line_y[line_y != -np.inf]), np.nanmax(line_y)]
+    yrange = ylim[1]-ylim[0]
+    for idx_p, peak in enumerate(peaks):
+            plt.plot([line_x[peak], line_x[peak]], ylim, '--', color=rand_color(0.3, 0.9))
+            plt.text(line_x[peak], line_y[peak]+(idx_p%10+1)*yrange*0.04, str(np.round(line_x[peak],3)),fontweight='bold')
     
-    
+def rand_color(a, b):
+    r = b-a
+    color = (np.random.random()*r+a, np.random.random()*r+a, np.random.random()*r+a)
+    return color
     
     
     
