@@ -48,7 +48,7 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0, flag_al
         if flag_thr!=0:
             thr = np.median(proj)*7
             print('thr = {}'.format(thr))
-            proj[proj<thr] = 0
+            proj[proj<thr] = 1
             #proj[proj>=thr] = 1
             
         if flag_align:                

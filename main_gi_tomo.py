@@ -159,11 +159,11 @@ if flag_tomo:
 # =============================================================================
 # Label peak positons (deg) a sino
 # =============================================================================
-peak =  'sum11L'
+peak =  'sum20L'
 sino, sum_sino, theta = get_sino_from_a_peak(sino_dict, peak) # which peak roi
 plt.figure(10, figsize=[15, 8]); plt.clf()
 plt.plot(theta, sum_sino); #plt.ylim(0, 2e7)
-label_peaks(line_x, line_y)
+label_peaks(theta, sum_sino)
 plt.title(peak)
 
 
@@ -181,10 +181,10 @@ x[jj] = pd.DataFrame([[189.5, 'sum21L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[51+180, 'sum21L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[10, 'sum21L']], columns=['angle','peak']); jj = jj+1
 #sum11L
-x[jj] = pd.DataFrame([[58, 'sum11L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[164.5, 'sum11L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[58+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[164+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[59, 'sum11L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[165, 'sum11L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[59+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[165+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
 #sum12L
 x[jj] = pd.DataFrame([[79, 'sum12L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[147, 'sum12L']], columns=['angle','peak']); jj = jj+1
