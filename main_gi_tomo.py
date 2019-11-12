@@ -12,12 +12,9 @@ from scipy import signal
 from fun_peaks import *
 from fun_tomo_recon import *
 
-
-# /home/etsai/BNL/Research/GIWAXS_tomo_2019C3/RLi/waxs/GI_tomo
-
-########################################## 
+# =============================================================================
 # Specify input
-##########################################
+# =============================================================================
 source_dir = '../../raw/'
 out_dir = '../results/'
 infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))
@@ -33,9 +30,9 @@ filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+5]
 N_files = len(infiles); print('N_files = {}'.format(N_files))
 if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 
-########################################## 
-# Load all data and plot sum
-##########################################
+# =============================================================================
+# Load all/some data and plot sum
+# =============================================================================
 if flag_load_raw_data:
     t0 = time.time()   
     for ii, infile in enumerate(infiles):
@@ -89,13 +86,12 @@ if flag_load_raw_data:
         plt.colorbar()
         plt.show()
         
-
-##########################################
-# Get peaks
-##########################################
+# =============================================================================
+# Get peaks from raw tiff files
+# =============================================================================
 if flag_get_peaks:
     t0 = time.time()
-    flag_load_parellel = 0
+    flag_load_parellel = 0  # Sometimes parallel doesn't work..
     if flag_load_parellel:
         with Parallel(n_jobs=3) as parallel:
             results = parallel( delayed(get_peaks)(infile, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG) for infile in infiles )
@@ -120,10 +116,9 @@ if flag_get_peaks:
     fn_out = check_file_exist(fn_out)
     df_peaks.to_csv(fn_out)
  
-
-##########################################
+# =============================================================================
 # Sino and recon
-########################################## 
+# =============================================================================
 if flag_load_peaks:
     df_peaks = pd.read_csv(out_dir+'df_peaks_all_subbg{}'.format(flag_LinearSubBKG))
 
@@ -141,12 +136,12 @@ list_peaks = ['sum002',
  'sum21Lb',
  'sumBKG0']
 list_peaks = []
-data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=1, flag_thr=0)
+data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=1, flag_thr=1000)
 print(sino_dict['list_peaks'])
 sino_sum = get_sino_sum(sino_dict)
 
 ## Plot sino
-plot_sino(sino_dict, fignum=30, title_st=filename, vlog10=[0, 5])
+plot_sino(sino_dict, fignum=30, title_st=filename, vlog10=[0, 5.5])
 
 fn_out = out_dir+filename+'peaks_sino' 
 fn_out = check_file_exist(fn_out)
@@ -161,11 +156,11 @@ if flag_tomo:
     plt.savefig(fn_out, format='png')
 
 
-
-##########################################
-# Create sino for a domain    
-##########################################
-##  Specify the angles to include for a certain domain by looking at the sino for a peak
+# =============================================================================
+# Create sino for a domain        
+# =============================================================================
+    
+## Specify the angles to include for a certain domain by looking at the sino for a peak
 x = {}; jj=0
 #sum20L
 x[jj] = pd.DataFrame([[29, 'sum20L']], columns=['angle','peak']); jj = jj+1
@@ -177,9 +172,9 @@ x[jj] = pd.DataFrame([[51+180, 'sum21L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[10, 'sum21L']], columns=['angle','peak']); jj = jj+1
 #sum11L
 x[jj] = pd.DataFrame([[58, 'sum11L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[165, 'sum11L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[164.5, 'sum11L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[58+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[165+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[164+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
 #sum12L
 x[jj] = pd.DataFrame([[79, 'sum12L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[147, 'sum12L']], columns=['angle','peak']); jj = jj+1
@@ -193,8 +188,8 @@ list_peaks_angles = list_peaks_angles_orig.copy()
 
 
 ## Different domains
-domain_angle_offset = [-12, -10, -4, -0.5, 0, 0.5, 1,2, 6, 8, 12, 13, 19, 24]
-plt.figure(100, figsize=[20, 10]); plt.clf()
+domain_angle_offset = [-12, -10, -4, -0.5, 0, 0.5, 1, 1.5, 2, 6, 8, 12, 13, 19, 24]
+plt.figure(101, figsize=[20, 10]); plt.clf()
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
     angles_old = list_peaks_angles_orig['angle']
@@ -206,26 +201,31 @@ for ii, offset in enumerate(domain_angle_offset):
     sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=1)
     ## Plot sino
     title_st = '{}\n offset={} and width={}'.format(filename, offset, width)
-    #plot_sino(sino_dm, theta = sino_dict_dm['theta'], axis_x = sino_dict_dm['axis_x'], title_st=title_st, vlog10=[-0.1, 0.1], fignum=50)
+    plt.subplot(3,len(domain_angle_offset),ii+1)
+    plot_sino(sino_dm, theta = sino_dict_dm['theta'], axis_x = sino_dict_dm['axis_x'], title_st=title_st, vlog10=[-0.1, 0.1], fignum=-1)
     #plot_angles(list_peaks_angles['angle'], fignum=51)    
     
     # Tomo recon
-    plt.subplot(2,len(domain_angle_offset),ii+1)
+    plt.subplot(3,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
     title_st = 'offset={}$^\circ$\nwidth={}'.format(offset, width)
     recon_all = get_plot_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
     
     # Another width
     width = 1
     sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=1)
-    plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
-    title_st = 'offset={}\nwidth={}'.format(offset, width)
+    plt.subplot(3,len(domain_angle_offset),len(domain_angle_offset)*2+ii+1)
+    title_st = 'offset={}$^\circ$\nwidth={}'.format(offset, width)
     recon_all = get_plot_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
 
+   
+# =============================================================================
+#     
+# =============================================================================
 
     
     
-    
-    
-    
-    
-    
+
+
+
+
+

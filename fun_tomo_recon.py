@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import copy
 import tomopy
 
+# =============================================================================
+# Load dataframe into a dictionary and do preprocessing
+# =============================================================================
 def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0, flag_align=1):
     
     if list_peaks==[]:
@@ -41,7 +44,7 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0, flag_al
         #proj = proj[:,:,6:]
         #proj = pow(proj,1.2)    
         
-        if flag_thr:
+        if flag_thr!=0:
             thr = np.median(proj)*7
             print('thr = {}'.format(thr))
             proj[proj<thr] = 0
@@ -63,6 +66,10 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0, flag_al
     
     return data_sort, sino_dict
 
+
+# =============================================================================
+# Sum sino over all peaks
+# =============================================================================
 def get_sino_sum(sino_data):
     if type(sino_data)==dict:
         sino_allpeaks = sino_data['sino_allpeaks']
@@ -80,7 +87,9 @@ def get_sino_sum(sino_data):
     
     return sino_sum
         
-
+# =============================================================================
+# Plot sinogram
+# =============================================================================
 def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino', vlog10=[0, 6]):   
     if type(sino_data)==dict:
         sino_allpeaks = sino_data['sino_allpeaks']
@@ -92,34 +101,41 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
         sino_allpeaks = np.reshape(sino_data, (sino_data.shape[0], sino_data.shape[1], 1))
         list_peaks = []
     
-    plt.figure(fignum, figsize=[12,12]); plt.clf()    
+    if fignum>0: plt.figure(fignum, figsize=[12,12]); plt.clf()    
     Npeaks =  sino_allpeaks.shape[2]
     for ii in np.arange(0, sino_allpeaks.shape[2]):
         sino = sino_allpeaks[:,:,ii]
         peak = list_peaks[ii] if list_peaks!=[] else ''
         
-        plt.subplot(2,Npeaks,ii+1)
+        if fignum>0: 
+            plt.subplot(2,Npeaks,ii+1)
         plt.imshow(sino, cmap='jet', aspect='auto') #, extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
         plt.axis('off')
-        if ii==0: 
-            plt.title('{}\n{}'.format(title_st, peak), fontweight='bold')
-            plt.axis('on');
-        elif ii%2: plt.title('{}'.format(peak), fontweight='bold')
-        else: plt.title('{}'.format(peak))
-        v1 = np.linspace(sino.min(), sino.max(), 2, endpoint=True)
-        cb = plt.colorbar(orientation='horizontal', pad=0.05, ticks=v1)
-        cb.ax.set_xticklabels(["{:.1e}".format(v) if v>0 else "" for v in v1])
+        if fignum>0:
+            if ii==0: 
+                plt.title('{}\n{}'.format(title_st, peak), fontweight='bold')
+                plt.axis('on');
+            elif ii%2: plt.title('{}'.format(peak), fontweight='bold')
+            else: plt.title('{}'.format(peak))
+            v1 = np.linspace(sino.min(), sino.max(), 2, endpoint=True)
+            cb = plt.colorbar(orientation='horizontal', pad=0.05, ticks=v1)
+            cb.ax.set_xticklabels(["{:.1e}".format(v) if v>0 else "" for v in v1])
         
-        plt.subplot(2,Npeaks,Npeaks+ii+1)
-        plt.imshow(np.log10(sino), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]], vmin=vlog10[0], vmax=vlog10[1])
-        if ii==0: 
-            plt.axis('on'); plt.title('log10')
-            plt.xlabel('pos_x (mm)')
-            plt.ylabel('pos_phi (deg)')    
-        else: plt.axis('off')
-        if ii==sino_allpeaks.shape[2]-1:
-            plt.colorbar(orientation='horizontal', pad=0.01)    
+        if fignum>0: 
+            plt.subplot(2,Npeaks,Npeaks+ii+1)
+            plt.imshow(np.log10(sino), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]], vmin=vlog10[0], vmax=vlog10[1])
+            plt.axis('off')
+            if ii==0: 
+                plt.axis('on'); plt.title('log10')
+                plt.xlabel('pos_x (mm)')
+                plt.ylabel('pos_phi (deg)')    
+            else: plt.axis('off')
+            if ii==sino_allpeaks.shape[2]-1:
+                plt.colorbar(orientation='horizontal', pad=0.01)    
 
+# =============================================================================
+# Do recon and plot
+# =============================================================================
 def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridrec', 'fbp'], title_st='recon', fignum=40, colorbar=False):
     if type(sino_data)==dict:
         sino_allpeaks = sino_data['sino_allpeaks']
@@ -144,20 +160,17 @@ def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'g
         dark = np.zeros((1,1,sino.shape[2]))
         sino = tomopy.normalize(sino, flat, dark) # (sino-dark)/(flat-dark)
         
+        ## Get rotational center if not specified
         cen_init = sino.shape[2]/2
         if rot_center<=0:
             rot_center = tomopy.find_center(sino, theta, init=cen_init, ind=0, tol=0.1)
             print('Rotational center: {}'.format(rot_center))
-            if (rot_center>cen_init+5) or (rot_center<cen_init-5):
+            if (rot_center>cen_init+10) or (rot_center<cen_init-10):
                 rot_center = sino.shape[2]/2
-                
-        
-        ##########################################
-        # Tomo reconstruction
-        ##########################################      
+
+        ## Tomo reconstruction 
         # Keyword "algorithm" must be one of ['art', 'bart', 'fbp', 'gridrec', 'mlem', 'osem', 'ospml_hybrid', 
         # 'ospml_quad', 'pml_hybrid', 'pml_quad', 'sirt', 'tv', 'grad'], or a Python method.
-        
         #recon = tomopy.recon(proj, theta, center=rot_center, algorithm=tomopy.lprec, lpmethod='tv', ncore=1, num_iter=512, reg_par=5e-4)
         
         #rot_center = cen_init
@@ -182,11 +195,13 @@ def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'g
             
     return recon_all
     
-
+# =============================================================================
+# Combine data from different peaks into one sino for a domain
+# =============================================================================
 def get_combined_sino(sino_dict, list_peaks_angles, width=0, verbose=0):
     sino_allpeaks = sino_dict['sino_allpeaks']
     theta = sino_dict['theta']
-    list_peaks = sino_dict['list_peaks']
+    #list_peaks = sino_dict['list_peaks']
     
     peaks = np.asarray(list_peaks_angles['peak'])
     angles = np.asarray(list_peaks_angles['angle'])
@@ -194,8 +209,9 @@ def get_combined_sino(sino_dict, list_peaks_angles, width=0, verbose=0):
     if verbose>0: print('------')
     sino_dm = np.zeros([sino_allpeaks.shape[0], sino_allpeaks.shape[1]])
     for ii in np.arange(0,len(list_peaks_angles)):
-        idx = list_peaks.index(peaks[ii])
-        sino = sino_allpeaks[:,:,idx]  # get the sino for this peak (eg 'sum11L')
+        #idx = list_peaks.index(peaks[ii])
+        #sino = sino_allpeaks[:,:,idx]  # get the sino for this peak (eg 'sum11L')
+        get_sino_a_peak(sino_dict, peaks[ii])
         angle = angles[ii]
         if verbose>0: print('angle = {}, peak = {}'.format(angle, peaks[ii]))
         
@@ -207,13 +223,30 @@ def get_combined_sino(sino_dict, list_peaks_angles, width=0, verbose=0):
     if verbose>0: print('------')
     
     return sino_dm
- 
+
+
+# =============================================================================
+# Get the sino for a cetern peak
+# =============================================================================
+def get_sino_a_peak(sino_dict, peak):
+    sino_allpeaks = sino_dict['sino_allpeaks']
+    list_peaks = sino_dict['list_peaks']
+    idx = list_peaks.index(peak)
+    sino = sino_allpeaks[:,:,idx]
+    
+    return sino
+
+# =============================================================================
+# Get the index of the nearest angle in deg
+# =============================================================================
 def get_idx_angle(theta_array, theta=0):
     theta =theta%360
     x = abs(theta_array-theta).tolist()
     return x.index(min(x))    
     
-
+# =============================================================================
+# Get one projection (1d) from the 2D sino, for combinging data
+# =============================================================================
 def get_proj_from_sino(sino,  idx, width):
     line = np.zeros([1, sino.shape[1]])
     for ii in np.arange(idx-width, idx+width+1):
@@ -226,6 +259,9 @@ def get_proj_from_sino(sino,  idx, width):
     
     return line
 
+# =============================================================================
+# Plot angles on polar coordinate
+# =============================================================================
 def plot_angles(angles_deg, fignum=100, color='r'):
     angles_deg = np.asarray(angles_deg)
     angles_rad = np.asarray(angles_deg)/180*np.pi
