@@ -27,6 +27,7 @@ flag_tomo = 1
 #for ii in [2,3]: infiles.extend(glob.glob(os.path.join(source_dir, '*tomo_real_*00{}*.tiff'.format(ii))))
 # e.g. ../raw/C8BTBT_0.1Cmin_tomo_real_9_x-3.600_th0.090_1.00s_2526493_000656_waxs.tiff'
 filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+5]
+#filename = 'C8BTBT_0.1Cmin_tomo'
 N_files = len(infiles); print('N_files = {}'.format(N_files))
 if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 
@@ -159,12 +160,20 @@ if flag_tomo:
 # =============================================================================
 # Label peak positons (deg) a sino
 # =============================================================================
-peak =  'sum20L'
-sino, sum_sino, theta = get_sino_from_a_peak(sino_dict, peak) # which peak roi
-plt.figure(10, figsize=[15, 8]); plt.clf()
-plt.plot(theta, sum_sino); #plt.ylim(0, 2e7)
-label_peaks(theta, sum_sino)
-plt.title(peak)
+list_peaks = sino_dict['list_peaks']
+for peak in list_peaks[0:-1]:
+#peak =  'sum21Lb'
+#if 1:
+    sino, sum_sino, theta = get_sino_from_a_peak(sino_dict, peak) # which peak roi
+    plt.figure(10, figsize=[15, 8]); plt.clf()
+    plt.plot(theta, sum_sino); #plt.ylim(0, 2e7)
+    plt.xlabel('deg')
+    label_peaks(theta, sum_sino)
+    plt.title(peak)
+    
+    fn_out = out_dir+'peak_deg_'+peak
+    fn_out = check_file_exist(fn_out)
+    plt.savefig(fn_out, format='png')
 
 
 # =============================================================================
@@ -173,29 +182,56 @@ plt.title(peak)
 ## Specify the angles to include for a certain domain by looking at the sino for a peak
 x = {}; jj=0
 #sum20L
-x[jj] = pd.DataFrame([[29, 'sum20L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[28.5, 'sum20L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[209, 'sum20L']], columns=['angle','peak']); jj = jj+1
+#sum20Lb
+x[jj] = pd.DataFrame([[1.5, 'sum20Lb']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[182, 'sum20Lb']], columns=['angle','peak']); jj = jj+1
+
 #sum21L
 x[jj] = pd.DataFrame([[51, 'sum21L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[189.5, 'sum21L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[51+180, 'sum21L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[190, 'sum21L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[231, 'sum21L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[10, 'sum21L']], columns=['angle','peak']); jj = jj+1
+#sum21Lb
+x[jj] = pd.DataFrame([[20.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[159.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[200.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[340, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
+
 #sum11L
 x[jj] = pd.DataFrame([[59, 'sum11L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[165, 'sum11L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[59+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
 x[jj] = pd.DataFrame([[165+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
+#sum11Lb
+x[jj] = pd.DataFrame([[45.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[151.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[225.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[332, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+
 #sum12L
-x[jj] = pd.DataFrame([[79, 'sum12L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[147, 'sum12L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[79+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[147+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[79.5, 'sum12L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[147.5, 'sum12L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[79.5+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[147.5+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
+#sum12Lb
+x[jj] = pd.DataFrame([[63, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[131, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[243, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[311, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
+
 #sum02L
-#x[jj] = pd.DataFrame([[112, 'sum02L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[112, 'sum02L']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[292, 'sum02L']], columns=['angle','peak']); jj = jj+1
+#sum02Lb
+x[jj] = pd.DataFrame([[98.5, 'sum02Lb']], columns=['angle','peak']); jj = jj+1
+x[jj] = pd.DataFrame([[278.5, 'sum02Lb']], columns=['angle','peak']); jj = jj+1
+
 list_peaks_angles_orig = pd.concat(x)
 print(list_peaks_angles_orig.sort_values('angle'))
 list_peaks_angles = list_peaks_angles_orig.copy()
-
+plot_angles(list_peaks_angles['angle'], fignum=45)    
 
 ## Different domains
 domain_angle_offset = [-12, -10, -4, -0.5, 0, 0.5, 1, 1.5, 2, 6, 8, 12, 13, 19, 24]
@@ -210,23 +246,23 @@ for ii, offset in enumerate(domain_angle_offset):
     width = 0
     sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=1)
     ## Plot sino
-    title_st = '{}\n offset={} and width={}'.format(filename, offset, width)
-    plt.subplot(3,len(domain_angle_offset),ii+1)
-    plot_sino(sino_dm, theta = sino_dict_dm['theta'], axis_x = sino_dict_dm['axis_x'], title_st=title_st, vlog10=[-0.1, 0.1], fignum=-1)
+    title_st = '{}\n and width={}'.format(filename, width)
+    plt.subplot(2,len(domain_angle_offset),ii+1)
+    plot_sino(sino_dm, theta = sino_dict['theta'], axis_x = sino_dict['axis_x'], title_st=title_st, vlog10=[-0.1, 0.1], fignum=-1)
     #plot_angles(list_peaks_angles['angle'], fignum=51)    
     
     # Tomo recon
-    plt.subplot(3,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
-    title_st = 'offset={}$^\circ$\nwidth={}'.format(offset, width)
-    recon_all = get_plot_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
+    plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
+    title_st = 'ori={}$^\circ$\nwidth={}'.format(offset, width)
+    recon_all = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
     
     # Another width
-    width = 1
-    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=1)
-    plt.subplot(3,len(domain_angle_offset),len(domain_angle_offset)*2+ii+1)
-    title_st = 'offset={}$^\circ$\nwidth={}'.format(offset, width)
-    recon_all = get_plot_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
-
+#    width = 1
+#    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=1)
+#    plt.subplot(3,len(domain_angle_offset),len(domain_angle_offset)*2+ii+1)
+#    title_st = 'ori={}$^\circ$\nwidth={}'.format(offset, width)
+#    recon_all = get_plot_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
+#
 
 
 

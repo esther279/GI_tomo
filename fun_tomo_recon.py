@@ -41,7 +41,8 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0, flag_al
         
         if flag_rm_expbg and'sumBKG0' in data_sort.keys():
             #print(proj[bkg_max_idx])
-            proj = proj - proj_bkg*proj[bkg_max_idx]            
+            proj = proj - proj_bkg*proj[bkg_max_idx]         
+            proj[proj<1] = 1 
         #proj = proj[:,:,6:]
         #proj = pow(proj,1.2)    
         
@@ -240,7 +241,7 @@ def get_sino_from_a_peak(sino_dict, peak):
 # Get the index of the nearest angle in deg
 # =============================================================================
 def get_idx_angle(theta_array, theta=0):
-    theta =theta%360
+    theta = theta%360
     x = abs(theta_array-theta).tolist()
     return x.index(min(x))    
     
@@ -255,7 +256,8 @@ def get_proj_from_sino(sino,  idx, width):
     line = line / (width*2+1)    
     ## Normalize
     line = line-np.min(line)
-    line = line/np.max(line)
+    if np.max(line)>0:
+        line = line/np.max(line)
     
     return line
 
@@ -285,7 +287,7 @@ def label_peaks(line_x, line_y):
     yrange = ylim[1]-ylim[0]
     for idx_p, peak in enumerate(peaks):
             plt.plot([line_x[peak], line_x[peak]], ylim, '--', color=rand_color(0.3, 0.9))
-            plt.text(line_x[peak], line_y[peak]+(idx_p%10+1)*yrange*0.04, str(np.round(line_x[peak],3)),fontweight='bold')
+            plt.text(line_x[peak], line_y[peak]*0.6+(idx_p%5+1)*yrange*0.05, str(np.round(line_x[peak],3)),fontweight='bold')
     
 def rand_color(a, b):
     r = b-a
