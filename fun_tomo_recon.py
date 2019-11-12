@@ -210,7 +210,7 @@ def get_combined_sino(sino_dict, list_peaks_angles, width=0, verbose=0):
     if verbose>0: print('------')
     sino_dm = np.zeros([sino_allpeaks.shape[0], sino_allpeaks.shape[1]])
     for ii in np.arange(0,len(list_peaks_angles)):
-        sino = get_sino_from_a_peak(sino_dict, peaks[ii])  # get the sino for this peak (eg 'sum11L')
+        sino, _, _ = get_sino_from_a_peak(sino_dict, peaks[ii])  # get the sino for this peak (eg 'sum11L')
         angle = angles[ii]
         if verbose>0: print('angle = {}, peak = {}'.format(angle, peaks[ii]))
         
