@@ -18,18 +18,44 @@ from fun_tomo_recon import *
 source_dir = '../../raw/'
 out_dir = '../results/'
 infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))
+N_files = len(infiles); print('N_files = {}'.format(N_files))
+#for ii in [2,3]: infiles.extend(glob.glob(os.path.join(source_dir, '*tomo_real_*00{}*.tiff'.format(ii))))
+# e.g. ../raw/C8BTBT_0.1Cmin_tomo_real_9_x-3.600_th0.090_1.00s_2526493_000656_waxs.tiff'
+
 flag_load_raw_data = 0
 flag_get_peaks = 0;  flag_LinearSubBKG = 1
 flag_load_peaks = 1
 flag_tomo = 1
-# TOMO_sample3_T1_33_x1.200_th0.120_1.00s_2588547_000692_waxs.tiff 
 
-#for ii in [2,3]: infiles.extend(glob.glob(os.path.join(source_dir, '*tomo_real_*00{}*.tiff'.format(ii))))
-# e.g. ../raw/C8BTBT_0.1Cmin_tomo_real_9_x-3.600_th0.090_1.00s_2526493_000656_waxs.tiff'
-#filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+5]
-filename = 'C8BTBT_0.1Cmin_tomo'
-N_files = len(infiles); print('N_files = {}'.format(N_files))
+filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+5]
+#filename = 'C8BTBT_0.1Cmin_tomo'
 if os.path.exists(out_dir) is False: os.mkdir(out_dir)
+
+### Define peak roi from scattering pattern
+peak_list = [
+        # center, size, peak
+        [[575, 479], [60, 10], 'sum002'],
+        # 11L
+        [[525, 735], [180, 10], 'sum11L'],
+        [[525, 223], [180, 10], 'sum11Lb'],
+        # 02L
+        [[603, 787-3], [30, 10], 'sum02L'],
+        [[603, 172], [30, 10], 'sum02Lb'],
+        # 12L
+        [[589, 848], [58, 6], 'sum12L'], 
+        [[589, 110], [58, 6], 'sum12Lb'],
+        # 20L
+        [[323-6, 903], [60, 15], 'sum20L'],
+        [[323, 56], [30, 15], 'sum20Lb'],
+        # 21L
+        [[280, 936], [40, 15], 'sum21L'],
+        [[280, 26], [40, 15], 'sum21Lb'],
+        # Si
+        [[400, 809], [12, 12], 'sumSi'],
+        [[400, 151], [12, 12], 'sumSib'],
+        # background
+        [[560, 440], [30,30], 'sumBKG0'],
+        ]
 
 # =============================================================================
 # Load all/some data and plot sum
@@ -90,31 +116,6 @@ if flag_load_raw_data:
 # =============================================================================
 # Get peaks from raw tiff files
 # =============================================================================
-### Define peak roi  
-peak_list = [
-        # center, size, peak
-        [[575, 479], [60, 10], 'sum002'],
-        # 11L
-        [[525, 735], [180, 10], 'sum11L'],
-        [[525, 223], [180, 10], 'sum11Lb'],
-        # 02L
-        [[603, 787-3], [30, 10], 'sum02L'],
-        [[603, 172], [30, 10], 'sum02Lb'],
-        # 12L
-        [[589, 848], [58, 6], 'sum12L'], 
-        [[589, 110], [58, 6], 'sum12Lb'],
-        # 20L
-        [[323-6, 903], [60, 15], 'sum20L'],
-        [[323, 56], [30, 15], 'sum20Lb'],
-        # 21L
-        [[280, 936], [40, 15], 'sum21L'],
-        [[280, 26], [40, 15], 'sum21Lb'],
-        # Si
-        [[400, 809], [12, 12], 'sumSi'],
-        [[400, 151], [12, 12], 'sumSib'],
-        # background
-        [[560, 440], [30,30], 'sumBKG0'],
-        ]
 if flag_get_peaks:   
     
     t0 = time.time()
@@ -273,7 +274,8 @@ for ii, offset in enumerate(domain_angle_offset):
     list_peaks_angles['angle'] = angles_new
 
     ## Get sino
-    width = 0; flag_normal=0 # 1(normalize max to 1), 2(divided by the ROI area)
+    flag_normal=1 # 1(normalize max to 1), 2(divided by the ROI area)
+    width = 0 
     sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
     ## Plot sino
     title_st = '{}\nflag_normal={}'.format(filename, flag_normal) if ii==0 else ''
