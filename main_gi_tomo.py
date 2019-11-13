@@ -26,8 +26,8 @@ flag_tomo = 1
 
 #for ii in [2,3]: infiles.extend(glob.glob(os.path.join(source_dir, '*tomo_real_*00{}*.tiff'.format(ii))))
 # e.g. ../raw/C8BTBT_0.1Cmin_tomo_real_9_x-3.600_th0.090_1.00s_2526493_000656_waxs.tiff'
-filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+5]
-#filename = 'C8BTBT_0.1Cmin_tomo'
+#filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+5]
+filename = 'C8BTBT_0.1Cmin_tomo'
 N_files = len(infiles); print('N_files = {}'.format(N_files))
 if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 
@@ -90,32 +90,32 @@ if flag_load_raw_data:
 # =============================================================================
 # Get peaks from raw tiff files
 # =============================================================================
+### Define peak roi  
+peak_list = [
+        # center, size, peak
+        [[575, 479], [60, 10], 'sum002'],
+        # 11L
+        [[525, 735], [180, 10], 'sum11L'],
+        [[525, 223], [180, 10], 'sum11Lb'],
+        # 02L
+        [[603, 787-3], [30, 10], 'sum02L'],
+        [[603, 172], [30, 10], 'sum02Lb'],
+        # 12L
+        [[589, 848], [58, 6], 'sum12L'], 
+        [[589, 110], [58, 6], 'sum12Lb'],
+        # 20L
+        [[323-6, 903], [60, 15], 'sum20L'],
+        [[323, 56], [30, 15], 'sum20Lb'],
+        # 21L
+        [[280, 936], [40, 15], 'sum21L'],
+        [[280, 26], [40, 15], 'sum21Lb'],
+        # Si
+        [[400, 809], [12, 12], 'sumSi'],
+        [[400, 151], [12, 12], 'sumSib'],
+        # background
+        [[560, 440], [30,30], 'sumBKG0'],
+        ]
 if flag_get_peaks:   
-    ### Define peak roi  
-    peak_list = [
-            # center, size, peak
-            [[575, 479], [60, 10], 'sum002'],
-            # 11L
-            [[525, 735], [180, 10], 'sum11L'],
-            [[525, 223], [180, 10], 'sum11Lb'],
-            # 02L
-            [[603, 787-3], [30, 10], 'sum02L'],
-            [[603, 172], [30, 10], 'sum02Lb'],
-            # 12L
-            [[589, 848], [58, 6], 'sum12L'], 
-            [[589, 110], [58, 6], 'sum12Lb'],
-            # 20L
-            [[323-6, 903], [60, 15], 'sum20L'],
-            [[323, 56], [30, 15], 'sum20Lb'],
-            # 21L
-            [[280, 936], [40, 15], 'sum21L'],
-            [[280, 26], [40, 15], 'sum21Lb'],
-            # Si
-            [[400, 809], [12, 12], 'sumSi'],
-            [[400, 151], [12, 12], 'sumSib'],
-            # background
-            [[560, 440], [30,30], 'sumBKG0'],
-            ]
     
     t0 = time.time()
     flag_load_parellel = 0  # Sometimes parallel doesn't work..
@@ -166,11 +166,10 @@ list_peaks = ['sum002',
  'sum21Lb',
  'sumBKG0']
 list_peaks = []
-data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=1, flag_thr=1)
+data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=1, flag_thr=1) #flag_thr=2 for binary
 print(sino_dict['list_peaks'])
 sino_sum = get_sino_sum(sino_dict)
 sino_dict['areas'] = calc_area_peakROI(peak_list) #assuming list_peaks are the same as peak_list
-
 
 ## Plot sino
 plot_sino(sino_dict, fignum=30, title_st=filename, vlog10=[0, 5.5])
@@ -181,7 +180,7 @@ plt.savefig(fn_out, format='png')
     
 ## Do and plot recon
 if flag_tomo:
-    recon_all = get_recon(sino_dict, rot_center=32, algorithms = ['gridrec', 'fbp', 'tv'], fignum=40)
+    recon_all = get_plot_recon(sino_dict, rot_center=32, algorithms = ['gridrec', 'fbp', 'tv'], fignum=40)
 
     fn_out = out_dir+filename+'peaks_sino_tomo_subbg'+str(flag_LinearSubBKG); 
     fn_out = check_file_exist(fn_out)
@@ -266,7 +265,7 @@ plot_angles(list_peaks_angles['angle'], fignum=45)
 
 ## Different domains
 domain_angle_offset = [-11, -8, -4, -0.5, 0, 0.5, 1, 1.5, 2, 6, 12, 15, 24] #20L
-plt.figure(201, figsize=[20, 10]); plt.clf()
+plt.figure(200, figsize=[20, 10]); plt.clf()
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
     angles_old = list_peaks_angles_orig['angle']
@@ -274,12 +273,12 @@ for ii, offset in enumerate(domain_angle_offset):
     list_peaks_angles['angle'] = angles_new
 
     ## Get sino
-    width = 0
-    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=1)
+    width = 0; flag_normal=0 # 1(normalize max to 1), 2(divided by the ROI area)
+    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
     ## Plot sino
-    title_st = '{}\n and width={}'.format(filename, width)
+    title_st = '{}\nflag_normal={}'.format(filename, flag_normal) if ii==0 else ''
     plt.subplot(2,len(domain_angle_offset),ii+1)
-    plot_sino(sino_dm, theta = sino_dict['theta'], axis_x = sino_dict['axis_x'], title_st=title_st, vlog10=[-0.1, 0.1], fignum=-1)
+    plot_sino((sino_dm), theta = sino_dict['theta'], axis_x = sino_dict['axis_x'], title_st=title_st, fignum=-1)
     #plot_angles(list_peaks_angles['angle'], fignum=51)    
     
     # Tomo recon
@@ -292,7 +291,7 @@ for ii, offset in enumerate(domain_angle_offset):
 #    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=0)
 #    plt.subplot(3,len(domain_angle_offset),len(domain_angle_offset)*2+ii+1)
 #    title_st = 'width={}'.format(width)
-#    recon_all = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=32, algorithms = ['fbp'], title_st=[], fignum=-1, colorbar=True)
+#    recon_all = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
 
 
 fn_out = out_dir+'recon'

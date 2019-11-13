@@ -46,11 +46,11 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0, flag_al
         #proj = proj[:,:,6:]
         #proj = pow(proj,1.2)    
         
-        if flag_thr!=0:
+        if flag_thr>0:
             thr = np.median(proj)*7
             print('thr = {}'.format(thr))
             proj[proj<thr] = 1
-            #proj[proj>=thr] = 1
+            if flag_thr==2: proj[proj>=thr] = 100
             
         if flag_align:                
             ## Manually align sino
@@ -121,7 +121,9 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
             else: plt.title('{}'.format(peak))
             v1 = np.linspace(sino.min(), sino.max(), 2, endpoint=True)
             cb = plt.colorbar(orientation='horizontal', pad=0.05, ticks=v1)
-            cb.ax.set_xticklabels(["{:.1e}".format(v) if v>0 else "" for v in v1])
+            cb.ax.set_xticklabels(["{:.1e}".format(v) if v>1 else "" for v in v1])
+        else:
+            plt.title(title_st, fontweight='bold')
         
         if fignum>0: 
             plt.subplot(2,Npeaks,Npeaks+ii+1)
@@ -192,15 +194,15 @@ def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'g
             if colorbar:
                 v1 = np.linspace(recon.min(), recon.max(), 2, endpoint=True)
                 cb = plt.colorbar(orientation='horizontal', pad=0.05, ticks=v1)
-                cb.ax.set_xticklabels(["{:.1f}".format(v) if v>0 else "" for v in v1])
+                cb.ax.set_xticklabels(["{:.1f}".format(v) if v>1 else "" for v in v1])
             plt.axis('off')
             
     return recon_all
-    
+
 # =============================================================================
 # Combine data from different peaks into one sino for a domain
 # =============================================================================
-def get_combined_sino(sino_dict, list_peaks_angles, width=0, verbose=0):
+def get_combined_sino(sino_dict, list_peaks_angles, width=0, flag_normal=1, verbose=0):
     sino_allpeaks = sino_dict['sino_allpeaks']
     theta = sino_dict['theta']
     areas = sino_dict['areas']
@@ -216,16 +218,24 @@ def get_combined_sino(sino_dict, list_peaks_angles, width=0, verbose=0):
         angle = angles[ii]
         if verbose>0: print('angle = {}, peak = {}, area {}'.format(angle, peaks[ii], areas[idx]))        
         angle_idx = get_idx_angle(theta, theta=angle)
-        temp = get_proj_from_sino(sino,  angle_idx, width)  # get the projection at the angle
+        temp = get_proj_from_sino(sino,  angle_idx, width, flag_normal=flag_normal)  # get the projection at the angle
         ## Normalize wrt to area
-        temp = temp/areas[idx]        
+        if flag_normal==2:
+            temp = temp/areas[idx]*100        
         sino_dm[angle_idx-width:angle_idx+width+1, :] = temp
 
     sino_dict['sino_dm'] = sino_dm
     if verbose>0: print('------')
     
-    return sino_dm
+    return sino_dm                  
 
+# =============================================================================
+# Get index for a peak (eg 'sum11L')
+# =============================================================================
+def get_index_for_peak(sino_dict, peak):
+    list_peaks = sino_dict['list_peaks']
+    idx = list_peaks.index(peak)
+    return idx    
 
 # =============================================================================
 # Get the sino for a certain peak (eg 'sum11L')
@@ -237,14 +247,7 @@ def get_sino_from_a_peak(sino_dict, peak):
     sum_sino = np.sum(sino, 1)   
     theta = sino_dict['theta']
     return sino, sum_sino, theta
-
-# =============================================================================
-# Get index for a peak (eg 'sum11L')
-# =============================================================================
-def get_index_for_peak(sino_dict, peak):
-    list_peaks = sino_dict['list_peaks']
-    idx = list_peaks.index(peak)
-    return idx                         
+  
                          
 # =============================================================================
 # Get the index of the nearest angle in deg
@@ -257,14 +260,14 @@ def get_idx_angle(theta_array, theta=0):
 # =============================================================================
 # Get one projection (1d) from the 2D sino, for combinging data
 # =============================================================================
-def get_proj_from_sino(sino,  idx, width):
+def get_proj_from_sino(sino,  idx, width, flag_normal=1):
     line = np.zeros([1, sino.shape[1]])
     for ii in np.arange(idx-width, idx+width+1):
         line = line + sino[ii,:]
     line = line / (width*2+1)   
     
     ## Normalize
-    if 1:
+    if flag_normal==1:
         line = line-np.min(line)
         if np.max(line)>0:
             line = line/np.max(line)
