@@ -62,8 +62,9 @@ peak_list = [
 # =============================================================================
 if flag_load_raw_data:
     t0 = time.time()   
+    fraction = 10  # Quick checck peak positions
     for ii, infile in enumerate(infiles):
-        if ii%10==0: # Quick checck peak positions
+        if ii%fraction==0: 
             print("{}/{}, {}".format(ii, N_files, infile))
             temp = Image.open(infile).convert('I')
             data = np.copy(np.asarray(temp))
@@ -71,14 +72,14 @@ if flag_load_raw_data:
                 data_sum = data
             else:
                 data_sum = data_sum+data
-    data_avg = data_sum/np.size(infiles)*10    
+    data_avg = data_sum/np.size(infiles)*fraction    
     print("Data loading: {:.0f} s".format(time.time()-t0))
         
     # Plot
     plt.figure(1); plt.clf()
     plt.imshow(np.log10(data_avg), vmin=0.6, vmax=1.5)
     plt.colorbar()
-    plt.title('Average over {} data \n {}'.format(N_files,infiles[0]))
+    plt.title('Average over {} data (fraction=1/{}) \n {}'.format(N_files,fraction,infiles[0]))
     fn_out = out_dir+filename+'_avg'
     fn_out = check_file_exist(fn_out)
     plt.savefig(fn_out, format='png')
