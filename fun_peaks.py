@@ -9,7 +9,9 @@ import pandas as pd
 import tomopy
 import copy
 
-
+# =============================================================================
+# Crop array
+# =============================================================================
 def ArrayCrop(data=None, center=None, size=None):
     #data = img
     if np.size(size) == 1:
@@ -20,6 +22,9 @@ def ArrayCrop(data=None, center=None, size=None):
     y_end = center[1] +int(size[1]/2)
     return data[x_start:x_end, y_start:y_end]
 
+# =============================================================================
+# Plot a box
+# =============================================================================
 def plot_box(center, size, color='r'):
     x_start = center[0] - int(size[0]/2)
     x_end = center[0] + int(size[0]/2)
@@ -30,6 +35,9 @@ def plot_box(center, size, color='r'):
     plt.plot([y_start, y_start], [x_start, x_end], color=color)
     plt.plot([y_end, y_end], [x_start, x_end], color=color)
 
+# =============================================================================
+# Substract background
+# =============================================================================
 def LinearSubBKG(data):
 
     height, width = np.shape(data)
@@ -73,6 +81,9 @@ def LinearSubBKG(data):
 
     return data_sub, BKG
 
+# =============================================================================
+# Substract background
+# =============================================================================
 def LinearSubBKG_temp(data):
 
     height, width = np.shape(data)
@@ -90,8 +101,10 @@ def LinearSubBKG_temp(data):
     data_sub = data - BKG
     return data_sub, BKG
    
-    
-def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
+# =============================================================================
+# Get peak intensity (based on specified ROI) from raw data (tiff files)    
+# =============================================================================
+def get_peaks(infile, peak_list, verbose = 0, flag_LinearSubBKG = 0):
     if verbose>0: print(infile)        
     if verbose>1: print('Parse param manually for now..\n')
     
@@ -117,32 +130,6 @@ def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
         #plt.pcolormesh(np.log10(data_infile)) #,vmin=0.1,vmax=2.2); 
         plt.imshow(np.log10(data_infile))      
 
-      
-    ### Define peak roi  
-    peak_list = [
-            # center, size, peak
-            [[575, 479], [60, 10], 'sum002'],
-            # 11L
-            [[525, 735], [180, 10], 'sum11L'],
-            [[525, 223], [180, 10], 'sum11Lb'],
-            # 02L
-            [[603, 787-3], [30, 10], 'sum02L'],
-            [[603, 172], [30, 10], 'sum02Lb'],
-            # 12L
-            [[589, 848], [58, 6], 'sum12L'], 
-            [[589, 110], [58, 6], 'sum12Lb'],
-            # 20L
-            [[323-6, 903], [60, 15], 'sum20L'],
-            [[323, 56], [30, 15], 'sum20Lb'],
-            # 21L
-            [[280, 936], [40, 15], 'sum21L'],
-            [[280, 26], [40, 15], 'sum21Lb'],
-            # Si
-            [[400, 809], [12, 12], 'sumSi'],
-            [[400, 151], [12, 12], 'sumSib'],
-            # background
-            [[560, 440], [30,30], 'sumBKG0'],
-            ]
      
     for p in peak_list:
         center = p[0]
@@ -157,11 +144,13 @@ def get_peaks(infile, verbose = 0, flag_LinearSubBKG = 0):
         if flag_LinearSubBKG:
             [peakarea, BKG] = LinearSubBKG(peakarea)
         peakarea_sum = np.sum(peakarea)          
-        df[str(peak)] = peakarea_sum
+        df[str(peak)] = peakarea_sum    
 
     return df
 
-
+# =============================================================================
+# Check if file exists, append file name with number
+# =============================================================================
 def check_file_exist(fn):
     ii=0  
     fn_out = copy.deepcopy(fn)
@@ -172,3 +161,18 @@ def check_file_exist(fn):
     
     return fn_out
 
+# =============================================================================
+# Calculate ROI area 
+# =============================================================================
+def calc_area_peakROI(peak_list):
+    areas = np.zeros(len(peak_list))
+    for ii, temp in enumerate(peak_list):
+        roi = temp[1]
+        areas[ii] = roi[0]*roi[1]
+    return areas
+        
+        
+        
+        
+        
+    

@@ -90,17 +90,43 @@ if flag_load_raw_data:
 # =============================================================================
 # Get peaks from raw tiff files
 # =============================================================================
-if flag_get_peaks:
+if flag_get_peaks:   
+    ### Define peak roi  
+    peak_list = [
+            # center, size, peak
+            [[575, 479], [60, 10], 'sum002'],
+            # 11L
+            [[525, 735], [180, 10], 'sum11L'],
+            [[525, 223], [180, 10], 'sum11Lb'],
+            # 02L
+            [[603, 787-3], [30, 10], 'sum02L'],
+            [[603, 172], [30, 10], 'sum02Lb'],
+            # 12L
+            [[589, 848], [58, 6], 'sum12L'], 
+            [[589, 110], [58, 6], 'sum12Lb'],
+            # 20L
+            [[323-6, 903], [60, 15], 'sum20L'],
+            [[323, 56], [30, 15], 'sum20Lb'],
+            # 21L
+            [[280, 936], [40, 15], 'sum21L'],
+            [[280, 26], [40, 15], 'sum21Lb'],
+            # Si
+            [[400, 809], [12, 12], 'sumSi'],
+            [[400, 151], [12, 12], 'sumSib'],
+            # background
+            [[560, 440], [30,30], 'sumBKG0'],
+            ]
+    
     t0 = time.time()
     flag_load_parellel = 0  # Sometimes parallel doesn't work..
     if flag_load_parellel:
         with Parallel(n_jobs=3) as parallel:
-            results = parallel( delayed(get_peaks)(infile, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG) for infile in infiles )
+            results = parallel( delayed(get_peaks)(infile, peak_list, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG) for infile in infiles )
     else:
         results = []
         for ii, infile in enumerate(infiles):
             #if ii%10==0:
-            temp = get_peaks(infile, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG)
+            temp = get_peaks(infile, peak_list, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG)
             results.append(temp)
     print("\nLoad data and define peak roi: {:.0f} s".format(time.time()-t0))
     
@@ -117,6 +143,9 @@ if flag_get_peaks:
     fn_out = check_file_exist(fn_out)
     df_peaks.to_csv(fn_out)
  
+    # Calculate area
+    areas = calc_area_peakROI(peak_list)
+    
 # =============================================================================
 # Sino and recon
 # =============================================================================
@@ -140,6 +169,8 @@ list_peaks = []
 data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=1, flag_thr=1)
 print(sino_dict['list_peaks'])
 sino_sum = get_sino_sum(sino_dict)
+sino_dict['areas'] = calc_area_peakROI(peak_list) #assuming list_peaks are the same as peak_list
+
 
 ## Plot sino
 plot_sino(sino_dict, fignum=30, title_st=filename, vlog10=[0, 5.5])
@@ -234,8 +265,8 @@ list_peaks_angles = list_peaks_angles_orig.copy()
 plot_angles(list_peaks_angles['angle'], fignum=45)    
 
 ## Different domains
-domain_angle_offset = [-12, -10, -4, -0.5, 0, 0.5, 1, 1.5, 2, 6, 8, 12, 13, 19, 24]
-plt.figure(101, figsize=[20, 10]); plt.clf()
+domain_angle_offset = [-11, -8, -4, -0.5, 0, 0.5, 1, 1.5, 2, 6, 12, 15, 24] #20L
+plt.figure(201, figsize=[20, 10]); plt.clf()
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
     angles_old = list_peaks_angles_orig['angle']
@@ -258,11 +289,12 @@ for ii, offset in enumerate(domain_angle_offset):
     
     # Another width
 #    width = 1
-#    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=1)
+#    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=0)
 #    plt.subplot(3,len(domain_angle_offset),len(domain_angle_offset)*2+ii+1)
-#    title_st = 'ori={}$^\circ$\nwidth={}'.format(offset, width)
-#    recon_all = get_plot_recon(sino_dm, theta = sino_dict_dm['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
-#
+#    title_st = 'width={}'.format(width)
+#    recon_all = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=32, algorithms = ['fbp'], title_st=[], fignum=-1, colorbar=True)
 
 
-
+fn_out = out_dir+'recon'
+fn_out = check_file_exist(fn_out)
+plt.savefig(fn_out, format='png')
