@@ -301,7 +301,8 @@ def label_peaks(line_x, line_y):
     for idx_p, peak in enumerate(peaks):
             plt.plot([line_x[peak], line_x[peak]], ylim, '--', color=rand_color(0.3, 0.9))
             plt.text(line_x[peak], line_y[peak]*0.6+(idx_p%5+1)*yrange*0.05, str(np.round(line_x[peak],3)),fontweight='bold')
-    
+    return peaks
+
 def rand_color(a, b):
     r = b-a
     color = (np.random.random()*r+a, np.random.random()*r+a, np.random.random()*r+a)
