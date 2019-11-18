@@ -300,11 +300,14 @@ for ii in overlay_rgb:
     plt.imshow(image_channel); plt.axis('off')
     plt.title('ori = {:.1f}$^\circ$'.format(domain_angle_offset[ii]))
     channel += 1
-    
 ax = plt.subplot2grid((3, 7), (0, 2), rowspan=3, colspan=4); ax.cla()
 ax.set_facecolor('k')    
 plt.imshow(overlay)  #, origin='lower')       
-
+   
+## Save to png
+fn_out = out_dir+'recon_overlay{}{}{}'.format(overlay_rgb[0], overlay_rgb[1], overlay_rgb[2])
+fn_out = check_file_exist(fn_out)
+plt.savefig(fn_out, format='png')
 
 # =============================================================================
 # Plot all recons after threshold
