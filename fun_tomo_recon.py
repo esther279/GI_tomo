@@ -297,7 +297,7 @@ def label_peaks(line_x, line_y, onedomain=0):
     if onedomain:
         peaks, _ = find_peaks(line_y, height=np.mean(line_y)*1.5, distance=38/(line_x[1]-line_x[0])) #prominence=(0.2, None)) #width=2,
     else:
-        peaks, _ = find_peaks(line_y, height=np.mean(line_y))
+        peaks, _ = find_peaks(line_y, height=np.mean(line_y)*0.5)
     ylim = [np.nanmin(line_y[line_y != -np.inf]), np.nanmax(line_y)]
     yrange = ylim[1]-ylim[0]
     for idx_p, peak in enumerate(peaks):

@@ -218,7 +218,7 @@ temp_list = pd.concat(x)
 print(temp_list) #print(list_peaks_angles_orig.sort_values('angle'))
 
 ## Remove peaks not needed for sino
-print('Compare the list with the figure and drop unwanted peaks.')
+print('## Compare the list with the figure and drop unwanted peaks.')
 list_peaks_angles_orig = temp_list[temp_list.peak !='sumSi']
 list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSib']
 list_peaks_angles_orig = list_peaks_angles_orig.drop([24])   #list_peaks_angles_orig.copy()
@@ -226,8 +226,22 @@ list_peaks_angles_orig = list_peaks_angles_orig.drop([29])
 print(list_peaks_angles_orig)
 plot_angles(list_peaks_angles_orig['angle'], fignum=45)    
 
+
 ## Different domains
-domain_angle_offset = [-11, -8, -4, -0.5, 0, 0.5, 1, 1.5, 2, 6, 12, 15, 24] #20L
+plt.figure(200, figsize=[20, 10]); plt.clf()
+sino, sum_sino, theta = get_sino_from_a_peak(sino_dict, 'sum11L') #choose
+plt.plot(theta, sum_sino);  
+peaks_idx = label_peaks(theta, sum_sino, onedomain=0)
+print(*theta[peaks_idx], sep=', ')
+print('## Select the main peaks for reconstruction. See above for recommendations.')
+#domain_angle_offset = np.asarray([197.5, 201.0, 205.0, 209.0, 215.0, 221.0, 233.0]) - 209.0
+domain_angle_offset = np.asarray([154.0, 157.5, 160.5, 161.5, 165.5, 170.5, 171.5, 188.5, 189.5,]) - 165.5
+domain_angle_offset = np.append(domain_angle_offset, 12)
+print('   domain_angle_offset = {}'.format(domain_angle_offset))
+
+
+## Do recon for each domain
+recon_all_list = {}
 plt.figure(200, figsize=[20, 10]); plt.clf()
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
@@ -236,8 +250,8 @@ for ii, offset in enumerate(domain_angle_offset):
     list_peaks_angles['angle'] = angles_new
 
     ## Get sino
-    flag_normal = 1 # 1(normalize max to 1), 2(divided by the ROI area)
-    width = 0 
+    flag_normal=1 # 1(normalize max to 1), 2(divided by the ROI area)
+    width = 0
     sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
     ## Plot sino
     title_st = '{}\nflag_normal={}'.format(filename, flag_normal) if ii==0 else ''
@@ -245,10 +259,11 @@ for ii, offset in enumerate(domain_angle_offset):
     plot_sino((sino_dm), theta = sino_dict['theta'], axis_x = sino_dict['axis_x'], title_st=title_st, fignum=-1)
     #plot_angles(list_peaks_angles['angle'], fignum=51)    
     
-    # Tomo recon
+    ## Tomo recon
     plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
-    title_st = 'ori={}$^\circ$\nwidth={}'.format(offset, width)
-    recon_all = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
+    title_st = '[{}] ori={}$^\circ$'.format(ii,offset)
+    temp = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
+    recon_all_list[ii] = np.squeeze(temp['_fbp'])
     
     # Another width
 #    width = 1
@@ -257,41 +272,22 @@ for ii, offset in enumerate(domain_angle_offset):
 #    title_st = 'width={}'.format(width)
 #    recon_all = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
 
-
 fn_out = out_dir+'recon'
 fn_out = check_file_exist(fn_out)
 plt.savefig(fn_out, format='png')
-
-# =============================================================================
-# Plot all recons after threshold
-# =============================================================================
-recon_merged = np.zeros([recon_all_list[0].shape[0], recon_all_list[0].shape[1]])
-Ndomain = len(domain_angle_offset)
-plt.figure(300, figsize=[20,10]); plt.clf()
-for ii, recon in enumerate(recon_all_list.values()):
-    thr = np.max(recon)*0.6
-    print(thr)
-    recon_binary = recon.copy()
-    recon_binary[recon<thr] = np.nan
-    recon_binary[recon>=thr] = domain_angle_offset[ii]
-    recon_merged = recon_merged + recon_binary
-    plt.subplot(1,Ndomain,ii+1)  
-    plt.imshow(recon_binary); plt.axis('off')
-    plt.title('{}\nori = {:.1f}$^\circ$'.format(ii,domain_angle_offset[ii]))
 
 
 # =============================================================================
 # Overlap three domains spatially
 # =============================================================================
-overlay_rgb = [0,4,12]   #overlap these domains
+overlay_rgb = [1,5,9]   #overlap these domains
 
 plt.figure(400, figsize=[20,10]); plt.clf()
 rgb = 'RGB'
 channel=0; overlay = []
 for ii in overlay_rgb:      
     recon = recon_all_list[ii]
-    thr = np.max(recon)*0.6
-    print(thr)
+    thr = np.max(recon)*0.5
     recon_binary = recon.copy()
     recon_binary[recon<thr] = 0
     recon_binary[recon>=thr] = 1
@@ -308,6 +304,25 @@ for ii in overlay_rgb:
 ax = plt.subplot2grid((3, 7), (0, 2), rowspan=3, colspan=4); ax.cla()
 ax.set_facecolor('k')    
 plt.imshow(overlay)  #, origin='lower')       
+
+
+# =============================================================================
+# Plot all recons after threshold
+# =============================================================================
+recon_merged = np.zeros([recon_all_list[0].shape[0], recon_all_list[0].shape[1]])
+Ndomain = len(domain_angle_offset)
+plt.figure(300, figsize=[20,10]); plt.clf()
+for ii, recon in enumerate(recon_all_list.values()):
+    thr = np.max(recon)*0.5
+    print(thr)
+    recon_binary = recon.copy()
+    recon_binary[recon<thr] = np.nan
+    recon_binary[recon>=thr] = domain_angle_offset[ii]
+    recon_merged = recon_merged + recon_binary
+    plt.subplot(1,Ndomain,ii+1)  
+    plt.imshow(recon_binary); plt.axis('off')
+    plt.title('{}\nori = {:.1f}$^\circ$'.format(ii,domain_angle_offset[ii]))
+
 
 
 
