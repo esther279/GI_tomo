@@ -214,25 +214,24 @@ if flag_save_png:
 # =============================================================================
 # Create sino for a domain        
 # ============================================================================= 
-list_peaks_angles_orig = pd.concat(x)
-print(list_peaks_angles_orig) #print(list_peaks_angles_orig.sort_values('angle'))
+temp_list = pd.concat(x)
+print(temp_list) #print(list_peaks_angles_orig.sort_values('angle'))
 
 ## Remove peaks not needed for sino
 print('Compare the list with the figure and drop unwanted peaks.')
-list_peaks_angles = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSi']
-list_peaks_angles = list_peaks_angles[list_peaks_angles.peak !='sumSib']
-list_peaks_angles = list_peaks_angles.drop([24])   #list_peaks_angles_orig.copy()
-list_peaks_angles = list_peaks_angles.drop([29]) 
-print(list_peaks_angles)
-plot_angles(list_peaks_angles['angle'], fignum=45)    
-   
+list_peaks_angles_orig = temp_list[temp_list.peak !='sumSi']
+list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSib']
+list_peaks_angles_orig = list_peaks_angles_orig.drop([24])   #list_peaks_angles_orig.copy()
+list_peaks_angles_orig = list_peaks_angles_orig.drop([29]) 
+print(list_peaks_angles_orig)
+plot_angles(list_peaks_angles_orig['angle'], fignum=45)    
 
 ## Different domains
 domain_angle_offset = [-11, -8, -4, -0.5, 0, 0.5, 1, 1.5, 2, 6, 12, 15, 24] #20L
 plt.figure(200, figsize=[20, 10]); plt.clf()
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
-    angles_old = list_peaks_angles['angle']
+    angles_old = list_peaks_angles_orig['angle']
     angles_new = angles_old + offset
     list_peaks_angles['angle'] = angles_new
 
