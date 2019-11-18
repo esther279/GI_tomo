@@ -236,7 +236,7 @@ for ii, offset in enumerate(domain_angle_offset):
     list_peaks_angles['angle'] = angles_new
 
     ## Get sino
-    flag_normal=1 # 1(normalize max to 1), 2(divided by the ROI area)
+    flag_normal = 1 # 1(normalize max to 1), 2(divided by the ROI area)
     width = 0 
     sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
     ## Plot sino
@@ -261,3 +261,54 @@ for ii, offset in enumerate(domain_angle_offset):
 fn_out = out_dir+'recon'
 fn_out = check_file_exist(fn_out)
 plt.savefig(fn_out, format='png')
+
+# =============================================================================
+# Plot all recons after threshold
+# =============================================================================
+recon_merged = np.zeros([recon_all_list[0].shape[0], recon_all_list[0].shape[1]])
+Ndomain = len(domain_angle_offset)
+plt.figure(300, figsize=[20,10]); plt.clf()
+for ii, recon in enumerate(recon_all_list.values()):
+    thr = np.max(recon)*0.6
+    print(thr)
+    recon_binary = recon.copy()
+    recon_binary[recon<thr] = np.nan
+    recon_binary[recon>=thr] = domain_angle_offset[ii]
+    recon_merged = recon_merged + recon_binary
+    plt.subplot(1,Ndomain,ii+1)  
+    plt.imshow(recon_binary); plt.axis('off')
+    plt.title('{}\nori = {:.1f}$^\circ$'.format(ii,domain_angle_offset[ii]))
+
+
+# =============================================================================
+# Overlap three domains spatially
+# =============================================================================
+overlay_rgb = [0,4,12]   #overlap these domains
+
+plt.figure(400, figsize=[20,10]); plt.clf()
+rgb = 'RGB'
+channel=0; overlay = []
+for ii in overlay_rgb:      
+    recon = recon_all_list[ii]
+    thr = np.max(recon)*0.6
+    print(thr)
+    recon_binary = recon.copy()
+    recon_binary[recon<thr] = 0
+    recon_binary[recon>=thr] = 1
+    ax = plt.subplot2grid((3, 7), (channel, 0), colspan=2); 
+    image_channel = np.asarray(image_RGB(recon_binary, rgb[channel]))
+    if overlay==[]:
+        overlay = image_channel
+    else: 
+        overlay += image_channel
+    plt.imshow(image_channel); plt.axis('off')
+    plt.title('ori = {:.1f}$^\circ$'.format(domain_angle_offset[ii]))
+    channel += 1
+    
+ax = plt.subplot2grid((3, 7), (0, 2), rowspan=3, colspan=4); ax.cla()
+ax.set_facecolor('k')    
+plt.imshow(overlay)  #, origin='lower')       
+
+
+
+

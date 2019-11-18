@@ -305,13 +305,31 @@ def label_peaks(line_x, line_y, onedomain=0):
             plt.text(line_x[peak], line_y[peak]*0.6+(idx_p%5+1)*yrange*0.05, str(np.round(line_x[peak],3)),fontweight='bold')
     return peaks
 
+
+# =============================================================================
+# Generate a random color
+# =============================================================================
 def rand_color(a, b):
     r = b-a
     color = (np.random.random()*r+a, np.random.random()*r+a, np.random.random()*r+a)
     return color
     
     
+# =============================================================================
+# Return image stack with RGB channels
+# =============================================================================
+def image_RGB(image, rgb):
+    dim = image.shape
+    image_stack = np.zeros([dim[0], dim[1], 3])    
+    if 'R' in rgb:
+        image_stack[:,:,0] = image
+    if 'G' in rgb:
+        image_stack[:,:,1] = image     
+    if 'B' in rgb:
+        image_stack[:,:,2] = image
     
+    return image_stack
+   
     
     
     
