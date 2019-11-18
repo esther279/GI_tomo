@@ -149,7 +149,7 @@ if flag_get_peaks:
     areas = calc_area_peakROI(peak_list)
     
 # =============================================================================
-# Sino and recon
+# Get sino for each peak
 # =============================================================================
 if flag_load_peaks:
     df_peaks = pd.read_csv(out_dir+'df_peaks_all_subbg{}'.format(flag_LinearSubBKG))
@@ -290,7 +290,8 @@ for ii in overlay_rgb:
     thr = np.max(recon)*0.5
     recon_binary = recon.copy()
     recon_binary[recon<thr] = 0
-    recon_binary[recon>=thr] = 1
+    recon_binary = recon_binary/np.max(recon)
+    #recon_binary[recon>=thr] = 1
     ax = plt.subplot2grid((3, 7), (channel, 0), colspan=2); 
     image_channel = np.asarray(image_RGB(recon_binary, rgb[channel]))
     if overlay==[]:
