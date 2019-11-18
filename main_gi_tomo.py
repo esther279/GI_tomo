@@ -155,18 +155,6 @@ if flag_load_peaks:
     df_peaks = pd.read_csv(out_dir+'df_peaks_all_subbg{}'.format(flag_LinearSubBKG))
 
 ## Create sino from pd data
-list_peaks = ['sum002',
- 'sum11L',
- 'sum11Lb',
- 'sum02L',
- 'sum02Lb',
- 'sum12L',
- 'sum12Lb',
- 'sum20L',
- 'sum20Lb',
- 'sum21L',
- 'sum21Lb',
- 'sumBKG0']
 list_peaks = []
 data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=1, flag_thr=1) #flag_thr=2 for binary
 print(sino_dict['list_peaks'])
@@ -193,77 +181,92 @@ if flag_tomo:
 # Label peak positons (deg) a sino
 # =============================================================================
 list_peaks = sino_dict['list_peaks']
-for peak in list_peaks[0:-1]:
-#peak =  'sum21Lb'
+flag_save_png = 0
+
+x = {}; jj=0
+N = len(list_peaks[0:-1])
+plt.figure(10, figsize=[15, 8]); plt.clf()
+for ii, peak in enumerate(list_peaks[0:-1]):
+#peak =  'sum20L'
 #if 1:
     sino, sum_sino, theta = get_sino_from_a_peak(sino_dict, peak) # which peak roi
-    plt.figure(10, figsize=[15, 8]); plt.clf()
-    plt.plot(theta, sum_sino); #plt.ylim(0, 2e7)
-    plt.xlabel('deg')
-    label_peaks(theta, sum_sino)
-    plt.title(peak)
+    plt.subplot(N,1,ii+1)
+    plt.plot(theta, sum_sino);  #plt.ylim(0, 2e7)
+    plt.axis('off')     #plt.xlabel('deg')
+    plt.legend([peak], loc='upper left')
+    peaks_idx = label_peaks(theta, sum_sino, onedomain=1)
     
-    fn_out = out_dir+'peak_deg_'+peak
-    fn_out = check_file_exist(fn_out)
-    plt.savefig(fn_out, format='png')
+    # Store peaks and corresponding angles to a df for reconstructing a domain
+    for angle in theta[peaks_idx]:
+        x[jj] = pd.DataFrame([[angle, peak]], columns=['angle','peak'])
+        jj = jj+1
+    
+    # Save to png
+    if flag_save_png:
+        fn_out = out_dir+'peak_deg_'+peak
+        fn_out = check_file_exist(fn_out)
+        plt.savefig(fn_out, format='png')
 
 
 # =============================================================================
 # Create sino for a domain        
 # =============================================================================
 ## Specify the angles to include for a certain domain by looking at the sino for a peak
-x = {}; jj=0
-#sum20L
-x[jj] = pd.DataFrame([[28.5, 'sum20L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[209, 'sum20L']], columns=['angle','peak']); jj = jj+1
-#sum20Lb
-x[jj] = pd.DataFrame([[1.5, 'sum20Lb']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[182, 'sum20Lb']], columns=['angle','peak']); jj = jj+1
-
-#sum21L
-x[jj] = pd.DataFrame([[51, 'sum21L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[190, 'sum21L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[231, 'sum21L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[10, 'sum21L']], columns=['angle','peak']); jj = jj+1
-#sum21Lb
-x[jj] = pd.DataFrame([[20.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[159.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[200.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[340, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
-
-#sum11L
-x[jj] = pd.DataFrame([[59, 'sum11L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[165, 'sum11L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[59+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[165+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
-#sum11Lb
-x[jj] = pd.DataFrame([[45.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[151.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[225.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[332, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
-
-#sum12L
-x[jj] = pd.DataFrame([[79.5, 'sum12L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[147.5, 'sum12L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[79.5+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[147.5+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
-#sum12Lb
-x[jj] = pd.DataFrame([[63, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[131, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[243, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[311, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
-
-#sum02L
-x[jj] = pd.DataFrame([[112, 'sum02L']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[292, 'sum02L']], columns=['angle','peak']); jj = jj+1
-#sum02Lb
-x[jj] = pd.DataFrame([[98.5, 'sum02Lb']], columns=['angle','peak']); jj = jj+1
-x[jj] = pd.DataFrame([[278.5, 'sum02Lb']], columns=['angle','peak']); jj = jj+1
+if False:
+    x = {}; jj=0
+    #sum20L
+    x[jj] = pd.DataFrame([[28.5, 'sum20L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[209, 'sum20L']], columns=['angle','peak']); jj = jj+1
+    #sum20Lb
+    x[jj] = pd.DataFrame([[1.5, 'sum20Lb']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[182, 'sum20Lb']], columns=['angle','peak']); jj = jj+1
+    
+    #sum21L
+    x[jj] = pd.DataFrame([[51, 'sum21L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[190, 'sum21L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[231, 'sum21L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[10, 'sum21L']], columns=['angle','peak']); jj = jj+1
+    #sum21Lb
+    x[jj] = pd.DataFrame([[20.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[159.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[200.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[340, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
+    
+    #sum11L
+    x[jj] = pd.DataFrame([[59, 'sum11L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[165, 'sum11L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[59+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[165+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
+    #sum11Lb
+    x[jj] = pd.DataFrame([[45.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[151.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[225.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[332, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+    
+    #sum12L
+    x[jj] = pd.DataFrame([[79.5, 'sum12L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[147.5, 'sum12L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[79.5+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[147.5+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
+    #sum12Lb
+    x[jj] = pd.DataFrame([[63, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[131, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[243, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[311, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
+    
+    #sum02L
+    x[jj] = pd.DataFrame([[112, 'sum02L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[292, 'sum02L']], columns=['angle','peak']); jj = jj+1
+    #sum02Lb
+    x[jj] = pd.DataFrame([[98.5, 'sum02Lb']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[278.5, 'sum02Lb']], columns=['angle','peak']); jj = jj+1
 
 list_peaks_angles_orig = pd.concat(x)
-print(list_peaks_angles_orig.sort_values('angle'))
-list_peaks_angles = list_peaks_angles_orig.copy()
+print(list_peaks_angles_orig)   #print(list_peaks_angles_orig.sort_values('angle'))
+print('Compare the list with the figure and drop unwanted peaks.')
+list_peaks_angles = list_peaks_angles_orig.drop([24,29])  
 plot_angles(list_peaks_angles['angle'], fignum=45)    
+   
 
 ## Different domains
 domain_angle_offset = [-11, -8, -4, -0.5, 0, 0.5, 1, 1.5, 2, 6, 12, 15, 24] #20L
