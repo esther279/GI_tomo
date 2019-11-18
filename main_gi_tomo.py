@@ -181,7 +181,8 @@ if flag_tomo:
 # Label peak positons (deg) a sino
 # =============================================================================
 list_peaks = sino_dict['list_peaks']
-flag_save_png = 0
+flag_log10 = 0 # Use 1 only for plotting
+flag_save_png = 1
 
 x = {}; jj=0
 N = len(list_peaks[0:-1])
@@ -190,9 +191,11 @@ for ii, peak in enumerate(list_peaks[0:-1]):
 #peak =  'sum20L'
 #if 1:
     sino, sum_sino, theta = get_sino_from_a_peak(sino_dict, peak) # which peak roi
+    if flag_log10: 
+        sum_sino = np.log10(sum_sino)
     plt.subplot(N,1,ii+1)
-    plt.plot(theta, sum_sino);  #plt.ylim(0, 2e7)
-    plt.axis('off')     #plt.xlabel('deg')
+    plt.plot(theta, sum_sino);  
+    plt.axis('off')     
     plt.legend([peak], loc='upper left')
     peaks_idx = label_peaks(theta, sum_sino, onedomain=1)
     
@@ -201,70 +204,26 @@ for ii, peak in enumerate(list_peaks[0:-1]):
         x[jj] = pd.DataFrame([[angle, peak]], columns=['angle','peak'])
         jj = jj+1
     
-    # Save to png
-    if flag_save_png:
-        fn_out = out_dir+'peak_deg_'+peak
-        fn_out = check_file_exist(fn_out)
-        plt.savefig(fn_out, format='png')
+# Save to png
+if flag_save_png:
+    fn_out = out_dir+'peak_deg' #+peak
+    fn_out = check_file_exist(fn_out)
+    plt.savefig(fn_out, format='png')
 
 
 # =============================================================================
 # Create sino for a domain        
-# =============================================================================
-## Specify the angles to include for a certain domain by looking at the sino for a peak
-if False:
-    x = {}; jj=0
-    #sum20L
-    x[jj] = pd.DataFrame([[28.5, 'sum20L']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[209, 'sum20L']], columns=['angle','peak']); jj = jj+1
-    #sum20Lb
-    x[jj] = pd.DataFrame([[1.5, 'sum20Lb']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[182, 'sum20Lb']], columns=['angle','peak']); jj = jj+1
-    
-    #sum21L
-    x[jj] = pd.DataFrame([[51, 'sum21L']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[190, 'sum21L']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[231, 'sum21L']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[10, 'sum21L']], columns=['angle','peak']); jj = jj+1
-    #sum21Lb
-    x[jj] = pd.DataFrame([[20.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[159.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[200.5, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[340, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
-    
-    #sum11L
-    x[jj] = pd.DataFrame([[59, 'sum11L']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[165, 'sum11L']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[59+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[165+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
-    #sum11Lb
-    x[jj] = pd.DataFrame([[45.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[151.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[225.5, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[332, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
-    
-    #sum12L
-    x[jj] = pd.DataFrame([[79.5, 'sum12L']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[147.5, 'sum12L']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[79.5+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[147.5+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
-    #sum12Lb
-    x[jj] = pd.DataFrame([[63, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[131, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[243, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[311, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
-    
-    #sum02L
-    x[jj] = pd.DataFrame([[112, 'sum02L']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[292, 'sum02L']], columns=['angle','peak']); jj = jj+1
-    #sum02Lb
-    x[jj] = pd.DataFrame([[98.5, 'sum02Lb']], columns=['angle','peak']); jj = jj+1
-    x[jj] = pd.DataFrame([[278.5, 'sum02Lb']], columns=['angle','peak']); jj = jj+1
-
+# ============================================================================= 
 list_peaks_angles_orig = pd.concat(x)
-print(list_peaks_angles_orig)   #print(list_peaks_angles_orig.sort_values('angle'))
+print(list_peaks_angles_orig) #print(list_peaks_angles_orig.sort_values('angle'))
+
+## Remove peaks not needed for sino
 print('Compare the list with the figure and drop unwanted peaks.')
-list_peaks_angles = list_peaks_angles_orig.drop([24,29])  
+list_peaks_angles = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSi']
+list_peaks_angles = list_peaks_angles[list_peaks_angles.peak !='sumSib']
+list_peaks_angles = list_peaks_angles.drop([24])   #list_peaks_angles_orig.copy()
+list_peaks_angles = list_peaks_angles.drop([29]) 
+print(list_peaks_angles)
 plot_angles(list_peaks_angles['angle'], fignum=45)    
    
 
@@ -273,7 +232,7 @@ domain_angle_offset = [-11, -8, -4, -0.5, 0, 0.5, 1, 1.5, 2, 6, 12, 15, 24] #20L
 plt.figure(200, figsize=[20, 10]); plt.clf()
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
-    angles_old = list_peaks_angles_orig['angle']
+    angles_old = list_peaks_angles['angle']
     angles_new = angles_old + offset
     list_peaks_angles['angle'] = angles_new
 
