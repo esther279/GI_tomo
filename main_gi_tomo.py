@@ -16,7 +16,7 @@ from fun_tomo_recon import *
 # Specify input
 # =============================================================================
 source_dir = '../../raw/'
-out_dir = '../results/'
+out_dir = '../results_tomo/'
 infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))
 N_files = len(infiles); print('N_files = {}'.format(N_files))
 #for ii in [2,3]: infiles.extend(glob.glob(os.path.join(source_dir, '*tomo_real_*00{}*.tiff'.format(ii))))
@@ -56,6 +56,10 @@ peak_list = [
         # background
         [[560, 440], [30,30], 'sumBKG0'],
         ]
+fn_out = out_dir+'peak_list'
+fn_out = check_file_exist(fn_out)
+np.save(fn_out, peak_list)
+
 
 # =============================================================================
 # Load all/some data and plot sum
@@ -88,16 +92,17 @@ if flag_load_raw_data:
     fn_out = out_dir+'data_avg'
     fn_out = check_file_exist(fn_out)
     np.save(fn_out, data_avg)
-    #### Load and plot to define roi
-    if True:
-        temp2 = np.load(fn_out+'.npy')
-        plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(fn_out)
-        plt.imshow(np.log10(temp2), vmin=0.3, vmax=1.5); plt.colorbar()    
-        get_peaks(infiles[0], verbose=2)
-        
-        fn_out = out_dir+filename+'_peak_roi'
-        fn_out = check_file_exist(fn_out)
-        plt.savefig(fn_out, format='png')
+    if False:
+        data_avg = np.load(fn_out+'.npy')
+    
+    #### Plot to define roi
+    plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(fn_out)
+    plt.imshow(np.log10(data_avg), vmin=0.3, vmax=1.5); plt.colorbar()    
+    get_peaks(infiles[0], verbose=2)
+    
+    fn_out = out_dir+filename+'_peak_roi'
+    fn_out = check_file_exist(fn_out)
+    plt.savefig(fn_out, format='png')
     
     # Save as tiff
     if False:
