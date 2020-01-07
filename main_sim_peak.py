@@ -40,47 +40,58 @@ if flag_input_png:
     domain_angle_offset = [43, 63, 87, 100] 
 else:
     img = np.load(fn)
-    domain_angle_offset = np.unique(img[~np.isnan(img)])
-    print('domain angles = {}'.format(domain_angle_offset))
+    temp_angle = np.unique(img[~np.isnan(img)])
+    print('domain angles = {}'.format(temp_angle))
 
-
-### Generate sino for a peak
-if flag_generate_sino:
-    th_1 = -12 # np.min([np.nanmin(img), 0]) - 1
-    th_2 = 24
-    th_step = 0.5
-    thetas_deg = np.arange(th_1, th_2, th_step)
-    thetas_rad = thetas_deg/180*pi
-    sino_peak = []
-    for ii, theta in enumerate(thetas_deg):
-        print('theta={:.2f}'.format(theta))
-        img_domain = img.copy()
-        mask = (img_domain==theta)
-        img_domain[mask] = 1
-        img_domain[~mask] = 0
-        img_3d = img_domain.reshape(1, img.shape[0], img.shape[1])
-        proj1d = np.squeeze(tomopy.project(img_3d, thetas_rad[ii], center=None, emission=True, pad=True))
-        sino_peak.append(proj1d)
-    
-    
+            
 # Plot
 plt.figure(1, figsize=[8,18]); plt.clf()
 plt.subplot(311)
-plt.imshow(img); plt.colorbar()
-plt.title('domain angles = {}'.format(domain_angle_offset))
+plt.imshow(img, cmap='summer'); plt.colorbar()
+plt.title('domain angles = {}'.format(temp_angle))
+        
+
+### Generate sino for a peak
 if flag_generate_sino:
-    plt.subplot(312)
-    plt.imshow(sino_peak, aspect='auto', extent=[1, len(sino_peak[0]), np.max(thetas_deg), np.min(thetas_deg)]); 
-    plt.colorbar()
-    plt.ylabel('degree')
-
-
-## Save to png
-if flag_save_png:
-    fn_out = out_dir+'sim_sino'
-    fn_out = check_file_exist(fn_out)
-    plt.savefig(fn_out, format='png')
-
-
-
+    t0 = time.time()
+    
+    th_1 = -12 # np.min([np.nanmin(img), 0]) - 1
+    th_2 = 24
+    th_step = 0.5
+    
+    for origin in np.arange(0,360,15):
+        thetas_deg = np.arange(th_1+origin, th_2+origin, th_step)
+        thetas_rad = thetas_deg/180*pi
+    
+        sino_peak = []
+        for ii, theta in enumerate(thetas_deg):
+            if ii%5==0: print('theta={:.2f}'.format(theta))
+            img_domain = img.copy()
+            mask = (img_domain==theta-origin)
+            img_domain[mask] = 1
+            img_domain[~mask] = 0
+            img_3d = img_domain.reshape(1, img.shape[0], img.shape[1])
+            proj1d = np.squeeze(tomopy.project(img_3d, thetas_rad[ii], center=None, emission=True, pad=True))
+            sino_peak.append(proj1d)
+        print('time {}'.format(time.time()-t0))
+            
+            
+        # Plot
+        if flag_generate_sino:
+            plt.subplot(312)
+            plt.imshow(sino_peak, aspect='auto', extent=[1, len(sino_peak[0]), np.max(thetas_deg), np.min(thetas_deg)]); 
+            #plt.colorbar()
+            plt.ylabel('degree')
+            plt.title('origin (deg) = {}'.format(origin))
+            plt.show()
+        
+        
+        # Save to png
+        if flag_save_png:
+            fn_out = out_dir+'sim_sino'
+            fn_out = check_file_exist(fn_out)
+            plt.savefig(fn_out, format='png')
+        
+        
+        
 
