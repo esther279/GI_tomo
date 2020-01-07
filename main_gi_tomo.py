@@ -351,8 +351,9 @@ temp_angle = domain_angle_offset[domains_use]
 domains_recon = mask*temp_angle[np.argmax(recon_all_list_normal,0)]
 
 plt.figure(22); plt.clf()
-plt.imshow(domains_recon, cmap='cool')
+plt.imshow(domains_recon, cmap='summer')
 plt.colorbar()
+plt.title('orientation angles {}'.format(temp_angle))
 
 
 
