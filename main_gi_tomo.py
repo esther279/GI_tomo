@@ -345,15 +345,23 @@ for ii in domains_use:
     recon = recon_all_list[ii]
     recon_all_list_normal.append(recon/np.max(recon))
 mask = (recon!=0).astype(float)
-mask[mask==0] = np.nan
+mask_nan = mask.copy()
+mask_nan[mask==0] = np.nan
 
 temp_angle = domain_angle_offset[domains_use]
-domains_recon = mask*temp_angle[np.argmax(recon_all_list_normal,0)]
+domains_recon = mask_nan*temp_angle[np.argmax(recon_all_list_normal,0)]
 
 plt.figure(22); plt.clf()
 plt.imshow(domains_recon, cmap='summer')
 plt.colorbar()
 plt.title('orientation angles {}'.format(temp_angle))
+
+## Save to npy
+if 1:
+    fn_out = out_dir+'domains_recon'
+    fn_out = check_file_exist(fn_out)+'.npy'
+    np.save(fn_out, domains_recon)
+
 
 
 
