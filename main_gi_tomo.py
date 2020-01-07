@@ -335,6 +335,7 @@ for ii, recon in enumerate(recon_all_list.values()):
     plt.title('{}\nori = {:.1f}$^\circ$'.format(ii,domain_angle_offset[ii]))
 
 
+
 # =============================================================================
 # Generate a guess 
 # =============================================================================
@@ -346,7 +347,8 @@ for ii in domains_use:
 mask = (recon!=0).astype(float)
 mask[mask==0] = np.nan
 
-domains_recon = mask*domain_angle_offset[np.argmax(recon_all_list_normal,0)]
+temp_angle = domain_angle_offset[domains_use]
+domains_recon = mask*temp_angle[np.argmax(recon_all_list_normal,0)]
 
 plt.figure(22); plt.clf()
 plt.imshow(domains_recon, cmap='cool')
