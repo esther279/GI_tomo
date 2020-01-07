@@ -19,8 +19,10 @@ if 0:
 else:
     fn = '../results_tomo/domains_recon.npy'; 
     flag_input_png = False
-flag_generate_sino = 1
 
+flag_generate_sino = 1
+flag_save_png = 1
+out_dir = '../results_tomo/'
 
 ## Load pattern
 if flag_input_png:
@@ -73,7 +75,11 @@ if flag_generate_sino:
     plt.ylabel('degree')
 
 
-
+## Save to png
+if flag_save_png:
+    fn_out = out_dir+'sim_sino'
+    fn_out = check_file_exist(fn_out)
+    plt.savefig(fn_out, format='png')
 
 
 
