@@ -182,6 +182,7 @@ def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'g
         for jj, algo in enumerate(algorithms):
             recon = tomopy.recon(sino, theta, center=rot_center, algorithm=algo)
             recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
+            #recon[recon==0] = np.nan
             if fignum>0: plt.subplot(len(algorithms), Npeaks, (jj)*Npeaks+ii+1)
             plt.imshow(recon[0, :,:], cmap='jet') #, vmin=0, vmax=1.5e7)
             if title_st==[]:
@@ -221,7 +222,11 @@ def get_combined_sino(sino_dict, list_peaks_angles, width=0, flag_normal=1, verb
         temp = get_proj_from_sino(sino,  angle_idx, width, flag_normal=flag_normal)  # get the projection at the angle
         ## Normalize wrt to area
         if flag_normal==2:
-            temp = temp/areas[idx]*100        
+            temp = temp/areas[idx]*100  
+        elif flag_normal==3:
+            thr = np.max(temp.copy())/2
+            temp[temp<thr] = 0
+            temp[temp>thr] = 1
         sino_dm[angle_idx-width:angle_idx+width+1, :] = temp
 
     sino_dict['sino_dm'] = sino_dm

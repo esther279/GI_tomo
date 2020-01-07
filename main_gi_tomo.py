@@ -16,7 +16,7 @@ from fun_tomo_recon import *
 # Specify input
 # =============================================================================
 source_dir = '../../raw/'
-out_dir = '../results/'
+out_dir = '../results_tomo/'
 infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))
 N_files = len(infiles); print('N_files = {}'.format(N_files))
 #for ii in [2,3]: infiles.extend(glob.glob(os.path.join(source_dir, '*tomo_real_*00{}*.tiff'.format(ii))))
@@ -56,6 +56,10 @@ peak_list = [
         # background
         [[560, 440], [30,30], 'sumBKG0'],
         ]
+fn_out = out_dir+'peak_list'
+fn_out = check_file_exist(fn_out)
+np.save(fn_out, peak_list)
+
 
 # =============================================================================
 # Load all/some data and plot sum
@@ -88,16 +92,17 @@ if flag_load_raw_data:
     fn_out = out_dir+'data_avg'
     fn_out = check_file_exist(fn_out)
     np.save(fn_out, data_avg)
-    #### Load and plot to define roi
-    if True:
-        temp2 = np.load(fn_out+'.npy')
-        plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(fn_out)
-        plt.imshow(np.log10(temp2), vmin=0.3, vmax=1.5); plt.colorbar()    
-        get_peaks(infiles[0], verbose=2)
-        
-        fn_out = out_dir+filename+'_peak_roi'
-        fn_out = check_file_exist(fn_out)
-        plt.savefig(fn_out, format='png')
+    if False:
+        data_avg = np.load(fn_out+'.npy')
+    
+    #### Plot to define roi
+    plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(fn_out)
+    plt.imshow(np.log10(data_avg), vmin=0.3, vmax=1.5); plt.colorbar()    
+    get_peaks(infiles[0], verbose=2)
+    
+    fn_out = out_dir+filename+'_peak_roi'
+    fn_out = check_file_exist(fn_out)
+    plt.savefig(fn_out, format='png')
     
     # Save as tiff
     if False:
@@ -241,7 +246,7 @@ print('   domain_angle_offset = {}'.format(domain_angle_offset))
 
 
 ## Do recon for each domain
-recon_all_list = {}
+recon_all_list = []
 plt.figure(200, figsize=[20, 10]); plt.clf()
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
@@ -263,7 +268,7 @@ for ii, offset in enumerate(domain_angle_offset):
     plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
     title_st = '[{}] ori={}$^\circ$'.format(ii,offset)
     temp = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
-    recon_all_list[ii] = np.squeeze(temp['_fbp'])
+    recon_all_list.append(np.squeeze(temp['_fbp']))
     
     # Another width
 #    width = 1
@@ -326,6 +331,24 @@ for ii, recon in enumerate(recon_all_list.values()):
     plt.subplot(1,Ndomain,ii+1)  
     plt.imshow(recon_binary); plt.axis('off')
     plt.title('{}\nori = {:.1f}$^\circ$'.format(ii,domain_angle_offset[ii]))
+
+
+
+# =============================================================================
+# Generate a guess 
+# =============================================================================
+recon_all_list_normal = []
+for recon in recon_all_list:
+    recon_all_list_normal.append(recon/np.max(recon))
+mask = (recon!=0).astype(float)
+mask[mask==0] = np.nan
+
+domains_recon = mask*domain_angle_offset[np.argmax(recon_all_list_normal,0)]
+
+plt.figure(22); plt.clf()
+plt.imshow(domains_recon, cmap='cool')
+plt.colorbar()
+
 
 
 
