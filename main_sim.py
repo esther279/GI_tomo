@@ -18,7 +18,7 @@ import tomopy
 
 
 ## Load pattern
-fn = 'sample1b.png'
+fn = './img/sample1b.png'
 temp = Image.open(fn).convert('L')
 temp = np.asarray(temp)
 img = temp.copy(); img.setflags(write=1)

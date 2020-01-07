@@ -285,14 +285,14 @@ plt.savefig(fn_out, format='png')
 # =============================================================================
 # Overlap three domains spatially
 # =============================================================================
-overlay_rgb = [1,5,9]   #overlap these domains
+domains_use = [0, 3, 4]   #overlay these domains
 
 plt.figure(400, figsize=[20,10]); plt.clf()
 rgb = 'RGB'
 channel=0; overlay = []
-for ii in overlay_rgb:      
+for ii in domains_use:      
     recon = recon_all_list[ii]
-    thr = np.max(recon)*0.5
+    thr = np.max(recon)*0.7
     recon_binary = recon.copy()
     recon_binary[recon<thr] = 0
     recon_binary = recon_binary/np.max(recon)
@@ -308,12 +308,14 @@ for ii in overlay_rgb:
     channel += 1
 ax = plt.subplot2grid((3, 7), (0, 2), rowspan=3, colspan=4); ax.cla()
 ax.set_facecolor('k')    
-plt.imshow(overlay)  #, origin='lower')       
+plt.imshow(overlay)  #, origin='lower')    
    
 ## Save to png
-fn_out = out_dir+'recon_overlay{}{}{}'.format(overlay_rgb[0], overlay_rgb[1], overlay_rgb[2])
-fn_out = check_file_exist(fn_out)
-plt.savefig(fn_out, format='png')
+if flag_save_png:
+    fn_out = out_dir+'recon_overlay{}{}{}'.format(overlay_rgb[0], overlay_rgb[1], overlay_rgb[2])
+    fn_out = check_file_exist(fn_out)
+    plt.savefig(fn_out, format='png')
+
 
 # =============================================================================
 # Plot all recons after threshold
@@ -333,12 +335,13 @@ for ii, recon in enumerate(recon_all_list.values()):
     plt.title('{}\nori = {:.1f}$^\circ$'.format(ii,domain_angle_offset[ii]))
 
 
-
 # =============================================================================
 # Generate a guess 
 # =============================================================================
+domains_use = [0, 3, 4, 6]  #np.arange(0, len(recon_all_list))
 recon_all_list_normal = []
-for recon in recon_all_list:
+for ii in domains_use:      
+    recon = recon_all_list[ii]
     recon_all_list_normal.append(recon/np.max(recon))
 mask = (recon!=0).astype(float)
 mask[mask==0] = np.nan
