@@ -329,7 +329,7 @@ if flag_save_png:
 recon_merged = np.zeros([recon_all_list[0].shape[0], recon_all_list[0].shape[1]])
 Ndomain = len(domain_angle_offset)
 plt.figure(300, figsize=[20,10]); plt.clf()
-for ii, recon in enumerate(recon_all_list.values()):
+for ii, recon in enumerate(recon_all_list):
     thr = np.max(recon)*0.5
     print(thr)
     recon_binary = recon.copy()
