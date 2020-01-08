@@ -41,19 +41,23 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0, flag_al
         
         if flag_rm_expbg and'sumBKG0' in data_sort.keys():
             #print(proj[bkg_max_idx])
+            print('NOTE: flag_rm_expbg=1, this substracts the normalized sumBKG0 (normalized to the projection value at which the sumBKG0 is max) from the projection')
             proj = proj - proj_bkg*proj[bkg_max_idx]         
             proj[proj<1] = 1 
         #proj = proj[:,:,6:]
         #proj = pow(proj,1.2)    
         
         if flag_thr>0:
+            print('NOTE: flag_thr>0, proj[proj<((np.median(proj)*7))] = 1')
             thr = np.median(proj)*7
             print('thr = {}'.format(thr))
             proj[proj<thr] = 1
-            if flag_thr==2: proj[proj>=thr] = 100
+            if flag_thr==2: 
+                print('NOTE: proj[proj>=thr] = 100')
+                proj[proj>=thr] = 100
             
         if flag_align:                
-            ## Manually align sino
+            print('NOTE: Manually align sino')
             old = proj[:,31]
             proj[:,31] = np.roll(old,-1)   
             
@@ -102,17 +106,22 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
         sino_data = np.asarray(sino_data)
         sino_allpeaks = np.reshape(sino_data, (sino_data.shape[0], sino_data.shape[1], 1))
         list_peaks = []
+        theta = []
     
-    if fignum>0: plt.figure(fignum, figsize=[12,12]); plt.clf()    
+    if fignum>0: 
+        plt.figure(fignum, figsize=[12,12]); plt.clf()    
     Npeaks =  sino_allpeaks.shape[2]
+    
     for ii in np.arange(0, sino_allpeaks.shape[2]):
         sino = sino_allpeaks[:,:,ii]
+        sum_sino = np.sum(sino, 1)   
         peak = list_peaks[ii] if list_peaks!=[] else ''
         
         if fignum>0: 
-            plt.subplot(2,Npeaks,ii+1)
+            plt.subplot(3,Npeaks,ii+1)
         plt.imshow(sino, cmap='jet', aspect='auto') #, extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
         plt.axis('off')
+        
         if fignum>0:
             if ii==0: 
                 plt.title('{}\n{}'.format(title_st, peak), fontweight='bold')
@@ -126,7 +135,15 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
             plt.title(title_st, fontweight='bold')
         
         if fignum>0: 
-            plt.subplot(2,Npeaks,Npeaks+ii+1)
+            ax1 = plt.subplot(3,Npeaks,Npeaks+ii+1)
+            plt.plot(sum_sino, theta)
+            peaks_idx = label_peaks(theta, sum_sino, onedomain=1, axis_flip=1)
+            ## Overlay with log10 
+            ax2 =ax1.twiny()
+            ax2.plot(np.log10(sum_sino), theta, 'r', alpha=0.3);
+            ax2.axis('off'); ax1.axis('off')
+            
+            plt.subplot(3,Npeaks,Npeaks*2+ii+1)            
             plt.imshow(np.log10(sino), cmap='jet', aspect='auto', extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]], vmin=vlog10[0], vmax=vlog10[1])
             plt.axis('off')
             if ii==0: 
@@ -136,6 +153,7 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
             else: plt.axis('off')
             if ii==sino_allpeaks.shape[2]-1:
                 plt.colorbar(orientation='horizontal', pad=0.01)    
+                
 
 # =============================================================================
 # Do recon and plot
@@ -298,16 +316,25 @@ def plot_angles(angles_deg, fignum=100, color='r'):
 # =============================================================================
 #  Find and label peaks   
 # =============================================================================
-def label_peaks(line_x, line_y, onedomain=0):
+def label_peaks(line_x, line_y, onedomain=0, axis_flip=0):
     if onedomain:
         peaks, _ = find_peaks(line_y, height=np.mean(line_y)*1.5, distance=38/(line_x[1]-line_x[0])) #prominence=(0.2, None)) #width=2,
     else:
         peaks, _ = find_peaks(line_y, height=np.mean(line_y)*0.5)
+
     ylim = [np.nanmin(line_y[line_y != -np.inf]), np.nanmax(line_y)]
     yrange = ylim[1]-ylim[0]
     for idx_p, peak in enumerate(peaks):
-            plt.plot([line_x[peak], line_x[peak]], ylim, '--', color=rand_color(0.3, 0.9))
+        if axis_flip==0:
+            #plt.plot([line_x[peak], line_x[peak]], ylim, '--', color=rand_color(0.4, 0.5)) #rand_color(0.3, 0.9)
             plt.text(line_x[peak], line_y[peak]*0.6+(idx_p%5+1)*yrange*0.05, str(np.round(line_x[peak],3)),fontweight='bold')
+        else:
+            #plt.plot(ylim, [line_x[peak], line_x[peak]], '--', color=rand_color(0.4, 0.5))
+            plt.text(line_y[peak]*0.9, line_x[peak], str(np.round(line_x[peak],3)),fontweight='bold')
+    
+    if axis_flip: 
+        plt.gca().invert_yaxis()
+        
     return peaks
 
 
