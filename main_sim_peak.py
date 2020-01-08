@@ -13,15 +13,15 @@ import tomopy
 
 
 ## Input
-if 0:
-    fn = './img/sample1b.png';  
+if 1:
+    fn = './img/exp_sample2.png';  
     flag_input_png = True
 else:
     fn = '../results_tomo/domains_recon.npy'; 
     flag_input_png = False
 
 flag_generate_sino = 1
-flag_save_png = 1
+flag_save_png = 0
 out_dir = '../results_tomo/'
 
 ## Load pattern
@@ -37,7 +37,7 @@ if flag_input_png:
     
     img = 255-img
     img = np.around(img/np.max(img)*100)
-    domain_angle_offset = [43, 63, 87, 100] 
+    temp_angle = [43, 63, 87, 100] 
 else:
     img = np.load(fn)
     temp_angle = np.unique(img[~np.isnan(img)])
@@ -55,11 +55,11 @@ plt.title('domain angles = {}'.format(temp_angle))
 if flag_generate_sino:
     t0 = time.time()
     
-    th_1 = -12 # np.min([np.nanmin(img), 0]) - 1
-    th_2 = 24
-    th_step = 0.5
+    th_1 = 50 # np.min([np.nanmin(img), 0]) - 1
+    th_2 = 180
+    th_step = 5
     
-    for origin in np.arange(0,360,15):
+    for origin in [0]: #np.arange(0,360,15):
         thetas_deg = np.arange(th_1+origin, th_2+origin, th_step)
         thetas_rad = thetas_deg/180*pi
     
