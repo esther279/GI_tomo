@@ -206,8 +206,9 @@ for ii, peak in enumerate(list_peaks[0:-1]):
     
     # Store peaks and corresponding angles to a df for reconstructing a domain
     for angle in theta[peaks_idx]:
-        x[jj] = pd.DataFrame([[angle, peak]], columns=['angle','peak'])
-        jj = jj+1
+        if angle<181:
+            x[jj] = pd.DataFrame([[angle, peak]], columns=['angle','peak'])
+            jj = jj+1
     
 # Save to png
 if flag_save_png:
@@ -215,9 +216,8 @@ if flag_save_png:
     fn_out = check_file_exist(fn_out)
     plt.savefig(fn_out, format='png')
 
-
 # =============================================================================
-# Create sino for a domain        
+# Check angles      
 # ============================================================================= 
 temp_list = pd.concat(x)
 print(temp_list) #print(list_peaks_angles_orig.sort_values('angle'))
@@ -232,21 +232,27 @@ print(list_peaks_angles_orig)
 plot_angles(list_peaks_angles_orig['angle'], fignum=45)    
 
 
-## Different domains
+# =============================================================================
+# Different domains
+# =============================================================================
 plt.figure(200, figsize=[20, 10]); plt.clf()
 sino, sum_sino, theta = get_sino_from_a_peak(sino_dict, 'sum11L') #choose
 plt.plot(theta, sum_sino);  
 peaks_idx = label_peaks(theta, sum_sino, onedomain=0)
 print(*theta[peaks_idx], sep=', ')
-print('## Select the main peaks for reconstruction. See above for recommendations.')
+
+print('## Select the main peaks for reconstruction of different domains. See above for recommendations.')
 #domain_angle_offset = np.asarray([197.5, 201.0, 205.0, 209.0, 215.0, 221.0, 233.0]) - 209.0
 domain_angle_offset = np.asarray([154.0, 157.5, 160.5, 161.5, 165.5, 170.5, 171.5, 188.5, 189.5,]) - 165.5
 domain_angle_offset = np.append(domain_angle_offset, 12)
-print('   domain_angle_offset = {}'.format(domain_angle_offset))
+#domain_angle_offset = np.append(domain_angle_offset, np.arange(-2,2.5,0.5))
+domain_angle_offset = np.sort(domain_angle_offset)
+print('domain_angle_offset = {}'.format(domain_angle_offset))
 
 
 ## Do recon for each domain
 recon_all_list = []
+list_peaks_angles = list_peaks_angles_orig.copy()
 plt.figure(200, figsize=[20, 10]); plt.clf()
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
