@@ -262,8 +262,8 @@ for ii, offset in enumerate(domain_angle_offset):
     list_peaks_angles['angle'] = angles_new
 
     ## Get sino
-    flag_normal=3 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
-    width = 1
+    flag_normal = 3 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
+    width = 2
     sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
     ## Plot sino
     title_st = '{}\nflag_normal={}'.format(filename, flag_normal) if ii==0 else ''
@@ -278,13 +278,6 @@ for ii, offset in enumerate(domain_angle_offset):
     sino_all_list.append(sino_dm)
     recon_all_list.append(np.squeeze(temp['_fbp']))
         
-    # Another width
-#    width = 1
-#    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=0)
-#    plt.subplot(3,len(domain_angle_offset),len(domain_angle_offset)*2+ii+1)
-#    title_st = 'width={}'.format(width)
-#    recon_all = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
-
 fn_out = out_dir+'recon'
 fn_out = check_file_exist(fn_out)
 plt.savefig(fn_out, format='png')
@@ -366,7 +359,11 @@ plt.title('orientation angles {}'.format(temp_angle))
 
 
 ## Save to npy
-if 1:
+if 1:    
+    fn_out = out_dir+'domains_recon'
+    fn_out = check_file_exist(fn_out)
+    plt.savefig(fn_out, format='png')
+    
     fn_out = out_dir+'domains_recon.npy'
     np.save(fn_out, domains_recon)
     
