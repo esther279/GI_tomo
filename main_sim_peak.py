@@ -13,12 +13,14 @@ import tomopy
 
 
 ## Input
-if 1:
+if 0:
     fn = './img/exp_sample2.png';  
     flag_input_png = True
+    rot_angles = [0]
 else:
     fn = '../results_tomo/domains_recon.npy'; 
     flag_input_png = False
+    rot_angles = np.load('../results_tomo/rot_angles.npy')
 
 flag_generate_sino = 1
 flag_save_png = 0
@@ -39,14 +41,14 @@ if flag_input_png:
     img = np.around(img/np.max(img)*100)
     temp_angle = [43, 63, 87, 100] 
 else:
-    img = np.load(fn)
+    img = np.load(fn)+56
     temp_angle = np.unique(img[~np.isnan(img)])
     print('domain angles = {}'.format(temp_angle))
 
             
 # Plot
 plt.figure(1, figsize=[8,18]); plt.clf()
-plt.subplot(311)
+#plt.subplot(311)
 plt.imshow(img, cmap='summer'); plt.colorbar()
 plt.title('domain angles = {}'.format(temp_angle))
         
@@ -55,15 +57,20 @@ plt.title('domain angles = {}'.format(temp_angle))
 if flag_generate_sino:
     t0 = time.time()
     
-    th_1 = 50 # np.min([np.nanmin(img), 0]) - 1
+    th_1 = 0  #***Specify. np.min([np.nanmin(img), 0]) - 1
     th_2 = 180
-    th_step = 5
+    th_step = 0.5
     
-    for origin in [0]: #np.arange(0,360,15):
+    Nproj = len(rot_angles)
+    plt.figure(2, figsize=[22,12]); plt.clf()
+    
+    sino_peak = []
+    rot_angles = [0]
+    for aa, origin in enumerate(rot_angles): #np.arange(0,360,15):
         thetas_deg = np.arange(th_1+origin, th_2+origin, th_step)
-        thetas_rad = thetas_deg/180*pi
+        thetas_rad = thetas_deg/180*np.pi
     
-        sino_peak = []
+        sino_peak.append([])
         for ii, theta in enumerate(thetas_deg):
             if ii%5==0: print('theta={:.2f}'.format(theta))
             img_domain = img.copy()
@@ -72,18 +79,17 @@ if flag_generate_sino:
             img_domain[~mask] = 0
             img_3d = img_domain.reshape(1, img.shape[0], img.shape[1])
             proj1d = np.squeeze(tomopy.project(img_3d, thetas_rad[ii], center=None, emission=True, pad=True))
-            sino_peak.append(proj1d)
-        print('time {}'.format(time.time()-t0))
-            
+            sino_peak[aa].append(proj1d)
+        print('time {}'.format(time.time()-t0))            
             
         # Plot
-        if flag_generate_sino:
-            plt.subplot(312)
-            plt.imshow(sino_peak, aspect='auto', extent=[1, len(sino_peak[0]), np.max(thetas_deg), np.min(thetas_deg)]); 
-            #plt.colorbar()
-            plt.ylabel('degree')
-            plt.title('origin (deg) = {}'.format(origin))
-            plt.show()
+        plt.subplot(1, Nproj, aa+1)
+        plt.imshow(np.log10(sino_peak[aa]), aspect='auto')
+        #plt.imshow(np.log10(sino_peak[aa]), aspect='auto', extent=[1, len(sino_peak[0]), np.max(thetas_deg), np.min(thetas_deg)]); 
+        #plt.colorbar()
+        #plt.ylabel('degree')
+        plt.title('{}'.format(origin))
+        plt.show()
         
         
         # Save to png
@@ -93,5 +99,14 @@ if flag_generate_sino:
             plt.savefig(fn_out, format='png')
         
         
-        
+    ## Plot only
+    plt.figure(2, figsize=[22,12]); plt.clf()
+    for aa, origin in enumerate(rot_angles):
+        thetas_deg = np.arange(th_1+origin, th_2+origin, th_step)
+        plt.subplot(1, Nproj, aa+1)
+        plt.imshow(np.log10(sino_peak[aa]), aspect='auto', extent=[1, len(sino_peak[0]), np.max(thetas_deg), np.min(thetas_deg)]); 
+        plt.title('{}'.format(origin))
 
+    plot_sino(sino_peak[aa], fignum=3, theta=thetas_deg)
+        
+        

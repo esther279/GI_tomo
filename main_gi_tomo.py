@@ -249,11 +249,12 @@ domain_angle_offset = np.append(domain_angle_offset, 12)
 domain_angle_offset = np.sort(domain_angle_offset)
 print('domain_angle_offset = {}'.format(domain_angle_offset))
 
-
 ## Do recon for each domain
 recon_all_list = []
+sino_all_list = []
+plt.figure(203, figsize=[20, 10]); plt.clf()
 list_peaks_angles = list_peaks_angles_orig.copy()
-plt.figure(200, figsize=[20, 10]); plt.clf()
+
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
     angles_old = list_peaks_angles_orig['angle']
@@ -261,8 +262,8 @@ for ii, offset in enumerate(domain_angle_offset):
     list_peaks_angles['angle'] = angles_new
 
     ## Get sino
-    flag_normal=1 # 1(normalize max to 1), 2(divided by the ROI area)
-    width = 0
+    flag_normal=3 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
+    width = 1
     sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
     ## Plot sino
     title_st = '{}\nflag_normal={}'.format(filename, flag_normal) if ii==0 else ''
@@ -273,9 +274,10 @@ for ii, offset in enumerate(domain_angle_offset):
     ## Tomo recon
     plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
     title_st = '[{}] ori={}$^\circ$'.format(ii,offset)
-    temp = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=32, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
+    temp = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=30, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
+    sino_all_list.append(sino_dm)
     recon_all_list.append(np.squeeze(temp['_fbp']))
-    
+        
     # Another width
 #    width = 1
 #    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, verbose=0)
@@ -362,11 +364,18 @@ plt.imshow(domains_recon, cmap='summer')
 plt.colorbar()
 plt.title('orientation angles {}'.format(temp_angle))
 
+
 ## Save to npy
 if 1:
-    fn_out = out_dir+'domains_recon'
-    fn_out = check_file_exist(fn_out)+'.npy'
+    fn_out = out_dir+'domains_recon.npy'
     np.save(fn_out, domains_recon)
+    
+    fn_out = out_dir+'sino_all_list.npy'
+    np.save(fn_out, sino_all_list)
+    
+    rot_angles = np.asarray(list_peaks_angles_orig.sort_values('angle')['angle'])
+    fn_out = out_dir+'rot_angles.npy'
+    np.save(fn_out, rot_angles)
 
 
 

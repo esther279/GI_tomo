@@ -106,7 +106,6 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
         sino_data = np.asarray(sino_data)
         sino_allpeaks = np.reshape(sino_data, (sino_data.shape[0], sino_data.shape[1], 1))
         list_peaks = []
-        theta = []
     
     if fignum>0: 
         plt.figure(fignum, figsize=[12,12]); plt.clf()    
@@ -168,8 +167,10 @@ def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'g
         sino_data = np.asarray(sino_data)
         sino_allpeaks = np.reshape(sino_data, (sino_data.shape[0], sino_data.shape[1], 1))
         list_peaks = []
-    
-    if fignum>0: plt.figure(fignum, figsize=[12,12]); plt.clf()    
+    theta_rad = theta/180*np.pi 
+        
+    if fignum>0: 
+        plt.figure(fignum, figsize=[12,12]); plt.clf()    
     Npeaks =  sino_allpeaks.shape[2]  
     recon_all = {}
     for ii in np.arange(0, sino_allpeaks.shape[2]):
@@ -178,14 +179,14 @@ def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'g
         peak = list_peaks[ii] if list_peaks!=[] else ''
         
         #proj = tomopy.minus_log(proj)
-        flat = np.ones((1,1,sino.shape[2]))
-        dark = np.zeros((1,1,sino.shape[2]))
-        sino = tomopy.normalize(sino, flat, dark) # (sino-dark)/(flat-dark)
+        #flat = np.ones((1,1,sino.shape[2]))
+        #dark = np.zeros((1,1,sino.shape[2]))
+        #sino = tomopy.normalize(sino, flat, dark) # (sino-dark)/(flat-dark)
         
         ## Get rotational center if not specified
         cen_init = sino.shape[2]/2
         if rot_center<=0:
-            rot_center = tomopy.find_center(sino, theta, init=cen_init, ind=0, tol=0.1)
+            rot_center = tomopy.find_center(sino, theta_rad, init=cen_init, ind=0, tol=0.1)
             print('Rotational center: {}'.format(rot_center))
             if (rot_center>cen_init+10) or (rot_center<cen_init-10):
                 rot_center = sino.shape[2]/2
@@ -197,11 +198,13 @@ def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'g
         
         #rot_center = cen_init
         #plt.figure(50)
+        print(rot_center)
         for jj, algo in enumerate(algorithms):
-            recon = tomopy.recon(sino, theta, center=rot_center, algorithm=algo)
+            recon = tomopy.recon(sino, theta_rad, center=rot_center, algorithm=algo)
             recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
             #recon[recon==0] = np.nan
-            if fignum>0: plt.subplot(len(algorithms), Npeaks, (jj)*Npeaks+ii+1)
+            if fignum>0: 
+                plt.subplot(len(algorithms), Npeaks, (jj)*Npeaks+ii+1)
             plt.imshow(recon[0, :,:], cmap='jet') #, vmin=0, vmax=1.5e7)
             if title_st==[]:
                 if ii%2: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)), fontweight='bold')
@@ -238,11 +241,12 @@ def get_combined_sino(sino_dict, list_peaks_angles, width=0, flag_normal=1, verb
         if verbose>0: print('angle = {}, peak = {}, area {}'.format(angle, peaks[ii], areas[idx]))        
         angle_idx = get_idx_angle(theta, theta=angle)
         temp = get_proj_from_sino(sino,  angle_idx, width, flag_normal=flag_normal)  # get the projection at the angle
-        ## Normalize wrt to area
+        
+        ## Normalize 
         if flag_normal==2:
             temp = temp/areas[idx]*100  
         elif flag_normal==3:
-            thr = np.max(temp.copy())/2
+            thr = np.max(temp.copy())*0.5
             temp[temp<thr] = 0
             temp[temp>thr] = 1
         sino_dm[angle_idx-width:angle_idx+width+1, :] = temp
@@ -290,7 +294,7 @@ def get_proj_from_sino(sino,  idx, width, flag_normal=1):
     line = line / (width*2+1)   
     
     ## Normalize
-    if flag_normal==1:
+    if flag_normal>=1:
         line = line-np.min(line)
         if np.max(line)>0:
             line = line/np.max(line)
