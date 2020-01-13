@@ -363,7 +363,20 @@ def image_RGB(image, rgb):
         image_stack[:,:,1] = image     
     if 'B' in rgb:
         image_stack[:,:,2] = image
-    
+    if 'W' in rgb:
+        image_stack[:,:,0] = image
+        image_stack[:,:,1] = image
+        image_stack[:,:,2] = image
+    if 'C' in rgb:
+        image_stack[:,:,1] = image
+        image_stack[:,:,2] = image
+    if 'M' in rgb:
+        image_stack[:,:,0] = image
+        image_stack[:,:,2] = image           
+    if 'Y' in rgb:
+        image_stack[:,:,0] = image
+        image_stack[:,:,1] = image          
+        
     return image_stack
    
     

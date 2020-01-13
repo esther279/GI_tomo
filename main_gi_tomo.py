@@ -286,19 +286,22 @@ plt.savefig(fn_out, format='png')
 # =============================================================================
 # Overlap three domains spatially
 # =============================================================================
-domains_use = [0, 3, 4]   #overlay these domains
+domains_use = [0, 1, 3, 4, 6, 7, 8]   #overlay these domains
 
 plt.figure(400, figsize=[20,10]); plt.clf()
-rgb = 'RGB'
+rgb = 'RGBWCMY'
 channel=0; overlay = []
 for ii in domains_use:      
     recon = recon_all_list[ii]
-    thr = np.max(recon)*0.7
+    if ii==4:
+        thr = 0.55
+    else:
+        thr = 0.55
     recon_binary = recon.copy()
-    recon_binary[recon<thr] = 0
+    recon_binary[recon<thr*np.max(recon)] = 0
     recon_binary = recon_binary/np.max(recon)
     #recon_binary[recon>=thr] = 1
-    ax = plt.subplot2grid((3, 7), (channel, 0), colspan=2); 
+    ax = plt.subplot2grid((7, 7), (channel, 0), colspan=2); 
     image_channel = np.asarray(image_RGB(recon_binary, rgb[channel]))
     if overlay==[]:
         overlay = image_channel
@@ -307,9 +310,10 @@ for ii in domains_use:
     plt.imshow(image_channel); plt.axis('off')
     plt.title('ori = {:.1f}$^\circ$'.format(domain_angle_offset[ii]))
     channel += 1
-ax = plt.subplot2grid((3, 7), (0, 2), rowspan=3, colspan=4); ax.cla()
+ax = plt.subplot2grid((7, 7), (0, 2), rowspan=3, colspan=4); ax.cla()
 ax.set_facecolor('k')    
 plt.imshow(overlay)  #, origin='lower')    
+plt.title('thr = {}'.format(thr))
    
 ## Save to png
 if flag_save_png:
