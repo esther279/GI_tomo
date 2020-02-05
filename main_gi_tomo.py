@@ -252,9 +252,9 @@ print('domain_angle_offset = {}'.format(domain_angle_offset))
 ## Do recon for each domain
 recon_all_list = []
 sino_all_list = []
-plt.figure(203, figsize=[20, 10]); plt.clf()
 list_peaks_angles = list_peaks_angles_orig.copy()
 
+plt.figure(203, figsize=[20, 10]); plt.clf()
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
     angles_old = list_peaks_angles_orig['angle']
@@ -287,22 +287,35 @@ plt.savefig(fn_out, format='png')
 # Overlap three domains spatially
 # =============================================================================
 domains_use = [0, 1, 3, 4, 6, 7, 8]   #overlay these domains
-
-plt.figure(400, figsize=[20,10]); plt.clf()
 rgb = 'RGBWCMY'
 channel=0; overlay = []
+
+plt.figure(400, figsize=[20,10]); plt.clf()
 for ii in domains_use:      
     recon = recon_all_list[ii]
-    if ii==4:
-        thr = 0.55
-    else:
-        thr = 0.55
-    recon_binary = recon.copy()
-    recon_binary[recon<thr*np.max(recon)] = 0
-    recon_binary = recon_binary/np.max(recon)
-    #recon_binary[recon>=thr] = 1
+    
+    if 1: ## Threshold
+        if ii==4:
+            thr = 0.55
+        else:
+            thr = 0.55
+        recon_plot = do_thr(recon, thr)
+        
+    else: ## Segmentation
+        center = np.unravel_index(np.argmax(recon, axis=None), recon.shape)
+        center = np.flip(np.asarray(center))
+        print(center)
+        if ii==0:
+            centers = [center, [15, 20]]
+        elif ii==4: 
+            centers = [center, [18,27]]
+        else:
+            centers = [center]
+        recon_plot = do_segmentation(recon, centers, width=2, fignum=0)
+    
+    ## Plot
     ax = plt.subplot2grid((7, 7), (channel, 0), colspan=2); 
-    image_channel = np.asarray(image_RGB(recon_binary, rgb[channel]))
+    image_channel = np.asarray(image_RGB(recon_plot, rgb[channel]))
     if overlay==[]:
         overlay = image_channel
     else: 
@@ -310,11 +323,13 @@ for ii in domains_use:
     plt.imshow(image_channel); plt.axis('off')
     plt.title('ori = {:.1f}$^\circ$'.format(domain_angle_offset[ii]))
     channel += 1
+    
 ax = plt.subplot2grid((7, 7), (0, 2), rowspan=3, colspan=4); ax.cla()
 ax.set_facecolor('k')    
 plt.imshow(overlay)  #, origin='lower')    
 plt.title('thr = {}'.format(thr))
    
+
 ## Save to png
 if flag_save_png:
     fn_out = out_dir+'recon_overlay{}{}{}'.format(overlay_rgb[0], overlay_rgb[1], overlay_rgb[2])
@@ -327,18 +342,21 @@ if flag_save_png:
 # =============================================================================
 recon_merged = np.zeros([recon_all_list[0].shape[0], recon_all_list[0].shape[1]])
 Ndomain = len(domain_angle_offset)
+
 plt.figure(300, figsize=[20,10]); plt.clf()
 for ii, recon in enumerate(recon_all_list):
-    thr = np.max(recon)*0.5
+    thr = np.max(recon)*0.55
     print(thr)
     recon_binary = recon.copy()
-    recon_binary[recon<thr] = np.nan
+    recon_binary[recon<thr] = -20 #np.nan
     recon_binary[recon>=thr] = domain_angle_offset[ii]
     recon_merged = recon_merged + recon_binary
-    plt.subplot(1,Ndomain,ii+1)  
+    
+    plt.subplot(1,Ndomain+1,ii+1)  
     plt.imshow(recon_binary); plt.axis('off')
     plt.title('{}\nori = {:.1f}$^\circ$'.format(ii,domain_angle_offset[ii]))
-
+plt.subplot(1,Ndomain+1,Ndomain+1)  
+plt.imshow(recon_merged)
 
 
 # =============================================================================
@@ -346,9 +364,11 @@ for ii, recon in enumerate(recon_all_list):
 # =============================================================================
 domains_use = [0, 3, 4, 6]  #np.arange(0, len(recon_all_list))
 recon_all_list_normal = []
+
 for ii in domains_use:      
     recon = recon_all_list[ii]
     recon_all_list_normal.append(recon/np.max(recon))
+    
 mask = (recon!=0).astype(float)
 mask_nan = mask.copy()
 mask_nan[mask==0] = np.nan
