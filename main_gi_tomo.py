@@ -15,12 +15,10 @@ from fun_tomo_recon import *
 # =============================================================================
 # Specify input
 # =============================================================================
-source_dir = '../../raw/'
-out_dir = '../results_tomo/'
+source_dir = './waxs/raw/'
+out_dir = './results_tomo/'
 infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))
 N_files = len(infiles); print('N_files = {}'.format(N_files))
-#for ii in [2,3]: infiles.extend(glob.glob(os.path.join(source_dir, '*tomo_real_*00{}*.tiff'.format(ii))))
-# e.g. ../raw/C8BTBT_0.1Cmin_tomo_real_9_x-3.600_th0.090_1.00s_2526493_000656_waxs.tiff'
 
 flag_load_raw_data = 0
 flag_get_peaks = 0;  flag_LinearSubBKG = 1
@@ -28,37 +26,8 @@ flag_load_peaks = 1
 flag_tomo = 1
 
 filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+5]
-#filename = 'C8BTBT_0.1Cmin_tomo'
+print(filename)
 if os.path.exists(out_dir) is False: os.mkdir(out_dir)
-
-### Define peak roi from scattering pattern
-peak_list = [
-        # center, size, peak
-        [[575, 479], [60, 10], 'sum002'],
-        # 11L
-        [[525, 735], [180, 10], 'sum11L'],
-        [[525, 223], [180, 10], 'sum11Lb'],
-        # 02L
-        [[603, 787-3], [30, 10], 'sum02L'],
-        [[603, 172], [30, 10], 'sum02Lb'],
-        # 12L
-        [[589, 848], [58, 6], 'sum12L'], 
-        [[589, 110], [58, 6], 'sum12Lb'],
-        # 20L
-        [[323-6, 903], [60, 15], 'sum20L'],
-        [[323, 56], [30, 15], 'sum20Lb'],
-        # 21L
-        [[280, 936], [40, 15], 'sum21L'],
-        [[280, 26], [40, 15], 'sum21Lb'],
-        # Si
-        [[400, 809], [12, 12], 'sumSi'],
-        [[400, 151], [12, 12], 'sumSib'],
-        # background
-        [[560, 440], [30,30], 'sumBKG0'],
-        ]
-fn_out = out_dir+'peak_list'
-fn_out = check_file_exist(fn_out)
-np.save(fn_out, peak_list)
 
 
 # =============================================================================
@@ -79,12 +48,14 @@ if flag_load_raw_data:
     data_avg = data_sum/np.size(infiles)*fraction    
     print("Data loading: {:.0f} s".format(time.time()-t0))
         
-    # Plot
+    # Plot    
     plt.figure(1); plt.clf()
-    plt.imshow(np.log10(data_avg), vmin=0.6, vmax=1.5)
+    plt.imshow(np.log10(data_avg), vmin=1.1, vmax=1.8)
     plt.colorbar()
     plt.title('Average over {} data (fraction=1/{}) \n {}'.format(N_files,fraction,infiles[0]))
-    fn_out = out_dir+filename+'_avg'
+    
+    # Save png
+    fn_out = out_dir+filename+'_avg.png'
     fn_out = check_file_exist(fn_out)
     plt.savefig(fn_out, format='png')
 
@@ -95,29 +66,94 @@ if flag_load_raw_data:
     if False:
         data_avg = np.load(fn_out+'.npy')
     
-    #### Plot to define roi
-    plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(fn_out)
-    plt.imshow(np.log10(data_avg), vmin=0.3, vmax=1.5); plt.colorbar()    
-    get_peaks(infiles[0], verbose=2)
+    # Save as tiff
+    if True:
+        final_img = Image.fromarray((data_avg).astype(np.uint32))
+        infile_done = out_dir+filename+'_data_avg.tiff'
+        final_img.save(infile_done)     
+        
+        # Plot qr (after use SciAnalysis on the tiff file)
+        if True:
+            fn = './waxs/analysis/qr_image/TOMO_T1_real_data_avg.npz'
+            qinfo = np.load(fn)
+            qr_image = qinfo['image']
+            x_axis = qinfo['x_axis']
+            y_axis = qinfo['y_axis']
+            extent = (np.nanmin(x_axis), np.nanmax(x_axis), np.nanmin(y_axis), np.nanmax(y_axis))
+            plt.figure(11, figsize=[12,8]); plt.clf()
+            plt.imshow(np.log10(qr_image), origin='bottom', extent=extent, vmin=1.1, vmax=1.8) 
+            plt.ylim(0, np.nanmax(y_axis))
+            plt.grid(axis='x'); plt.colorbar()
+            plt.title(fn)
+            fn_out = out_dir+filename+'_qr.png'
+            plt.savefig(fn_out, format='png')
+        
+        # Load and plot
+        if False:
+            temp = Image.open(infile_done).convert('I') # 'I' : 32-bit integer pixels
+            data_avg_infile = np.copy( np.asarray(temp) )
+            plt.figure(2); plt.clf()
+            plt.imshow(data_avg_infile)
+            plt.clim(0, 20)
+            plt.colorbar()
+            plt.show()
     
-    fn_out = out_dir+filename+'_peak_roi'
+    ### Define peak roi from scattering pattern
+    peak_list = [
+            # center, size, peak
+            [[575, 471], [60, 10], 'sum002'],
+            # 01L
+            [[445, 577], [40, 10], 'sum01L'],
+            [[445, 366], [40, 10], 'sum01Lb'],
+            # 11L
+            [[525, 654], [180, 10], 'sum11L'],
+            [[525, 291], [180, 10], 'sum11Lb'],
+            # 02L
+            [[574, 688], [30, 10], 'sum02L'],
+            [[574, 255], [30, 10], 'sum02Lb'],
+            [[189, 677], [10, 10], 'sum02Lx'],
+            [[189, 264], [10, 10], 'sum02Lbx'],
+            # 12L
+            [[589, 736], [58, 6], 'sum12L'], 
+            [[589, 208], [58, 6], 'sum12Lb'],
+            # 20L
+            [[480, 771], [110, 20], 'sum20L'],
+            [[480, 172], [110, 20], 'sum20Lb'],
+            # 21L
+            [[380, 795], [40, 15], 'sum21L'],
+            [[380, 150], [40, 15], 'sum21Lb'],
+            # 13L
+            [[583, 103], [70, 15], 'sum13L'],
+            [[583, 841], [70, 15], 'sum13Lb'],
+            # 22L
+            [[400, 857], [10, 20], 'sum22L'],
+            [[400, 88], [10, 20], 'sum22Lb'],
+            # 
+            [[469, 957], [10, 10], 'sum23L'],
+            [[465, 969], [10, 10], 'sum31L'],
+            # Si
+            #[[400, 809], [12, 12], 'sumSi'],
+            #[[400, 151], [12, 12], 'sumSib'],
+            # background
+            [[570, 430], [30,30], 'sumBKG0'],
+            [[385, 430], [30,30], 'sumBKG1'],
+            ]
+    #### Plot to define roi
+    fig = plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(fn_out)
+    ax = fig.add_subplot(111)
+    ax.imshow(np.log10(data_avg), vmin=1.1, vmax=1.8)
+    get_peaks(infiles[0], peak_list, verbose=2)
+    
+    ## Save png
+    fn_out = out_dir+filename+'_peak_roi.png'
     fn_out = check_file_exist(fn_out)
     plt.savefig(fn_out, format='png')
     
-    # Save as tiff
-    if False:
-        final_img = Image.fromarray((data_avg).astype(np.uint32))
-        infile_done = 'CBTBT_0.1Cmin_tomo_real_data_avg.tiff'
-        final_img.save(infile_done)     
-        
-        # Load and plot
-        temp = Image.open(infile_done).convert('I') # 'I' : 32-bit integer pixels
-        data_avg_infile = np.copy( np.asarray(temp) )
-        plt.figure(2); plt.clf()
-        plt.imshow(data_avg_infile)
-        plt.clim(0, 20)
-        plt.colorbar()
-        plt.show()
+    # Save peak_list in npy
+    fn_out = out_dir+'peak_list'
+    fn_out = check_file_exist(fn_out)
+    np.save(fn_out, peak_list)
+
         
 # =============================================================================
 # Get peaks from raw tiff files
@@ -152,6 +188,7 @@ if flag_get_peaks:
  
     # Calculate area
     areas = calc_area_peakROI(peak_list)
+
     
 # =============================================================================
 # Get sino for each peak
