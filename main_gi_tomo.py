@@ -15,10 +15,11 @@ import tomopy
 from joblib import Parallel, delayed
 from scipy import signal
 
-import peaks 
-import tomo
-import seg
-import util 
+import analysis.peaks as peaks
+import analysis.tomo as tomo
+import analysis.seg as seg
+import analysis.util as util
+
 
 # =============================================================================
 # Specify input
