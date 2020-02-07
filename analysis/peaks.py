@@ -129,21 +129,23 @@ def get_peaks(infile, peak_list, verbose = 0, flag_LinearSubBKG = 0):
         plt.figure(99); plt.clf()
         #plt.pcolormesh(np.log10(data_infile)) #,vmin=0.1,vmax=2.2); 
         plt.imshow(np.log10(data_infile))      
-
      
     for p in peak_list:
-        center = p[0]
-        #center[1] = center[1]+5 if center[1] <470 else center[1]
-        size = p[1]
-        peak = p[2]
-        if verbose>1: 
-            plot_box(center, size) 
-            plt.text(center[1], center[0], str(peak), color='r')
+        N_regions = (len(p)-1)/2 # number of regions for this peak
+        peak = p[-1]
+        peakarea_sum = 0
+        for ii in np.arange(0, N_regions):
+            center = p[int(ii*2)]
+            size = p[int(ii*2+1)]
+            if verbose>1: 
+                plot_box(center, size) 
+                plt.text(center[1], center[0], str(peak), color='r')
+            
+            peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
+            if flag_LinearSubBKG:
+                [peakarea, BKG] = LinearSubBKG(peakarea)
+            peakarea_sum = peakarea_sum + np.sum(peakarea)          
         
-        peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-        if flag_LinearSubBKG:
-            [peakarea, BKG] = LinearSubBKG(peakarea)
-        peakarea_sum = np.sum(peakarea)          
         df[str(peak)] = peakarea_sum    
 
     return df

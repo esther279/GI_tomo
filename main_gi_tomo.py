@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
-import sys, os
-GI_TOMO_PATH='/home/etsai/BNL/Research/GIWAXS_tomo_2020C1/RLi5/GI_tomo/'
+import os, glob, time, sys
+GI_TOMO_PATH='/home/etsai/BNL/Research/GIWAXS_tomo_2020C1/RLi6/GI_tomo/'
 GI_TOMO_PATH in sys.path or sys.path.append(GI_TOMO_PATH)
 
-import os, glob, time, sys
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -24,8 +22,9 @@ import analysis.util as util
 # =============================================================================
 # Specify input
 # =============================================================================
-source_dir = './waxs/raw/'
-out_dir = './results_tomo/'
+os.chdir(GI_TOMO_PATH)
+source_dir = '../waxs/raw/'
+out_dir = '../results_tomo/'
 infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))
 N_files = len(infiles); print('N_files = {}'.format(N_files))
 
@@ -34,7 +33,7 @@ flag_get_peaks = 0;  flag_LinearSubBKG = 1
 flag_load_peaks = 1
 flag_tomo = 1
 
-filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+5]
+filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+4]
 print(filename)
 if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 
@@ -73,6 +72,7 @@ if flag_load_raw_data:
     fn_out = util.check_file_exist(fn_out)
     np.save(fn_out, data_avg)
     if False:
+        fn_out = out_dir+'data_avg'
         data_avg = np.load(fn_out+'.npy')
     
     # Save as tiff
@@ -94,6 +94,7 @@ if flag_load_raw_data:
             plt.ylim(0, np.nanmax(y_axis))
             plt.grid(axis='x'); plt.colorbar()
             plt.title(fn)
+            
             fn_out = out_dir+filename+'_qr.png'
             plt.savefig(fn_out, format='png')
         
@@ -108,38 +109,42 @@ if flag_load_raw_data:
             plt.show()
     
     ### Define peak roi from scattering pattern
-    peak_list = [
+    peak_list = [  #RLi6/T4
             # center, size, peak
             [[575, 471], [60, 10], 'sum002'],
             # 01L
             [[445, 577], [40, 10], 'sum01L'],
             [[445, 366], [40, 10], 'sum01Lb'],
             # 11L
-            [[525, 654], [180, 10], 'sum11L'],
-            [[525, 291], [180, 10], 'sum11Lb'],
+            [[458, 654], [320, 20], 'sum11L'],
+            [[458, 291], [320, 20], 'sum11Lb'],
             # 02L
-            [[574, 688], [30, 10], 'sum02L'],
+            [[605, 688], [100, 10], 'sum02L'],
             [[574, 255], [30, 10], 'sum02Lb'],
-            [[189, 677], [10, 10], 'sum02Lx'],
-            [[189, 264], [10, 10], 'sum02Lbx'],
+            [[189, 679], [10, 10], 'sum02Lx'],
+            [[189, 262], [10, 10], 'sum02Lbx'],
             # 12L
-            [[589, 736], [58, 6], 'sum12L'], 
-            [[589, 208], [58, 6], 'sum12Lb'],
+            [[420, 739], [400, 15], 'sum12L'], 
+            [[420, 205], [400, 15], 'sum12Lb'],
             # 20L
-            [[480, 771], [110, 20], 'sum20L'],
-            [[480, 172], [110, 20], 'sum20Lb'],
+            [[445, 770], [350, 16], 'sum20L'],
+            [[445, 173], [350, 16], 'sum20Lb'],
             # 21L
-            [[380, 795], [40, 15], 'sum21L'],
-            [[380, 150], [40, 15], 'sum21Lb'],
+            [[458, 794], [300, 15], 'sum21L'],
+            [[458, 151], [300, 15], 'sum21Lb'],
+            # 03L
+            [[350, 813], [280, 15], 'sum03L'],
+            [[350, 129], [280, 15], 'sum03Lb'],
             # 13L
-            [[583, 103], [70, 15], 'sum13L'],
-            [[583, 841], [70, 15], 'sum13Lb'],
+            [[583, 844], [70, 15], 'sum13L'],
+            [[583, 101], [70, 15], 'sum13Lb'],
             # 22L
             [[400, 857], [10, 20], 'sum22L'],
             [[400, 88], [10, 20], 'sum22Lb'],
             # 
-            [[469, 957], [10, 10], 'sum23L'],
-            [[465, 969], [10, 10], 'sum31L'],
+            [[595, 939], [10, 10],  [390, 949], [10, 10], 'sum23L'],
+            [[480, 960], [50, 15], 'sum31L'],
+            #[[465, 969], [10, 10], 'sum31L'],
             # Si
             #[[400, 809], [12, 12], 'sumSi'],
             #[[400, 151], [12, 12], 'sumSib'],
@@ -191,7 +196,7 @@ if flag_get_peaks:
     print(df_peaks.columns)
     
     # Save 
-    fn_out = out_dir+'df_peaks_all_subbgk{}'.format(flag_LinearSubBKG)
+    fn_out = out_dir+'df_peaks_all_subbg{}'.format(flag_LinearSubBKG)
     fn_out = util.check_file_exist(fn_out)
     df_peaks.to_csv(fn_out)
  
