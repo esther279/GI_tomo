@@ -10,7 +10,7 @@ from scipy.signal import find_peaks
 # =============================================================================
 # Load dataframe into a dictionary and do preprocessing
 # =============================================================================
-def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, thr=None, binary=None, flag_align=1):
+def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, thr=None, binary=None, flag_align=0):
     
     if list_peaks==[]:
         aa = [1 if 'sum' in temp else 0 for temp in data.keys()]

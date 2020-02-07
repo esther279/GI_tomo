@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os, glob, time, sys
-GI_TOMO_PATH='/home/etsai/BNL/Research/GIWAXS_tomo_2020C1/RLi6/GI_tomo/'
+HOME_PATH = '/home/etsai/BNL/Research/GIWAXS_tomo_2020C1/RLi6/'
+GI_TOMO_PATH = HOME_PATH+'GI_tomo/'
 GI_TOMO_PATH in sys.path or sys.path.append(GI_TOMO_PATH)
 
 import numpy as np
@@ -18,11 +19,10 @@ import analysis.tomo as tomo
 import analysis.seg as seg
 import analysis.util as util
 
-
 # =============================================================================
 # Specify input
 # =============================================================================
-os.chdir(GI_TOMO_PATH)
+os.chdir(HOME_PATH)
 source_dir = '../waxs/raw/'
 out_dir = '../results_tomo/'
 infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))

@@ -9,6 +9,8 @@ import pandas as pd
 import tomopy
 import copy
 
+import util
+
 # =============================================================================
 # Crop array
 # =============================================================================
@@ -21,19 +23,6 @@ def ArrayCrop(data=None, center=None, size=None):
     y_start = center[1] - int(size[1]/2)
     y_end = center[1] +int(size[1]/2)
     return data[x_start:x_end, y_start:y_end]
-
-# =============================================================================
-# Plot a box
-# =============================================================================
-def plot_box(center, size, color='r'):
-    x_start = center[0] - int(size[0]/2)
-    x_end = center[0] + int(size[0]/2)
-    y_start = center[1] - int(size[1]/2)
-    y_end = center[1] +int(size[1]/2)
-    plt.plot([y_start, y_end], [x_start, x_start], color=color)
-    plt.plot([y_start, y_end], [x_end, x_end], color=color)
-    plt.plot([y_start, y_start], [x_start, x_end], color=color)
-    plt.plot([y_end, y_end], [x_start, x_end], color=color)
 
 # =============================================================================
 # Substract background
@@ -104,7 +93,7 @@ def LinearSubBKG_temp(data):
 # =============================================================================
 # Get peak intensity (based on specified ROI) from raw data (tiff files)    
 # =============================================================================
-def get_peaks(infile, peak_list, verbose = 0, flag_LinearSubBKG = 0):
+def get_peaks(infile, peak_list, phi_max=360, verbose = 0, flag_LinearSubBKG = 0):
     if verbose>0: print(infile)        
     if verbose>1: print('Parse param manually for now..\n')
     
@@ -113,7 +102,7 @@ def get_peaks(infile, peak_list, verbose = 0, flag_LinearSubBKG = 0):
     zigzag_n = int(temp[3])
     scan_n = int(temp[7])
     if zigzag_n%2==0:
-        pos_phi = 360-float(temp[8])/2.0
+        pos_phi = phi_max-float(temp[8])/2.0
     else:
         pos_phi = float(temp[8])/2.0
 
@@ -138,8 +127,8 @@ def get_peaks(infile, peak_list, verbose = 0, flag_LinearSubBKG = 0):
             center = p[int(ii*2)]
             size = p[int(ii*2+1)]
             if verbose>1: 
-                plot_box(center, size) 
-                plt.text(center[1], center[0], str(peak), color='r')
+                util.plot_box(center, size, color=[0.7, 0.7, 0.7]) 
+                plt.text(center[1], center[0]+30*np.random.rand(), str(peak[3:]), color='r')
             
             peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
             if flag_LinearSubBKG:

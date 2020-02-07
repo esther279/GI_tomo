@@ -6,7 +6,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 
-
+# =============================================================================
+# Plot a box
+# =============================================================================
+def plot_box(center, size, color='r'):
+    x_start = center[0] - int(size[0]/2)
+    x_end = center[0] + int(size[0]/2)
+    y_start = center[1] - int(size[1]/2)
+    y_end = center[1] +int(size[1]/2)
+    plt.plot([y_start, y_end], [x_start, x_start], color=color)
+    plt.plot([y_start, y_end], [x_end, x_end], color=color)
+    plt.plot([y_start, y_start], [x_start, x_end], color=color)
+    plt.plot([y_end, y_end], [x_start, x_end], color=color)
+    
+    
 # =============================================================================
 # Check if file exists, append file name with number
 # =============================================================================
