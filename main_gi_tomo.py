@@ -23,8 +23,8 @@ import analysis.util as util
 # Specify input
 # =============================================================================
 os.chdir(HOME_PATH)
-source_dir = '../waxs/raw/'
-out_dir = '../results_tomo/'
+source_dir = './waxs/raw/'
+out_dir = './results_tomo/'
 infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))
 N_files = len(infiles); print('N_files = {}'.format(N_files))
 
@@ -109,38 +109,38 @@ if flag_load_raw_data:
             plt.show()
     
     ### Define peak roi from scattering pattern
-    peak_list = [  #RLi6/T4
+    peak_list = [
             # center, size, peak
             [[575, 471], [60, 10], 'sum002'],
             # 01L
             [[445, 577], [40, 10], 'sum01L'],
             [[445, 366], [40, 10], 'sum01Lb'],
             # 11L
-            [[458, 654], [320, 20], 'sum11L'],
-            [[458, 291], [320, 20], 'sum11Lb'],
+            [[520, 654], [200, 20], 'sum11L'],
+            [[520, 291], [200, 20], 'sum11Lb'],
             # 02L
             [[605, 688], [100, 10], 'sum02L'],
             [[574, 255], [30, 10], 'sum02Lb'],
             [[189, 679], [10, 10], 'sum02Lx'],
             [[189, 262], [10, 10], 'sum02Lbx'],
             # 12L
-            [[420, 739], [400, 15], 'sum12L'], 
-            [[420, 205], [400, 15], 'sum12Lb'],
+            [[540, 737], [230, 15], 'sum12L'], 
+            [[520, 206], [200, 15], 'sum12Lb'],
             # 20L
-            [[445, 770], [350, 16], 'sum20L'],
-            [[445, 173], [350, 16], 'sum20Lb'],
+            [[540, 770], [230, 16], 'sum20L'],
+            [[520, 173], [200, 16], 'sum20Lb'],
             # 21L
-            [[458, 794], [300, 15], 'sum21L'],
-            [[458, 151], [300, 15], 'sum21Lb'],
+            [[520, 794], [200, 15], 'sum21L'],
+            [[520, 151], [200, 15], 'sum21Lb'],
             # 03L
-            [[350, 813], [280, 15], 'sum03L'],
-            [[350, 129], [280, 15], 'sum03Lb'],
+            [[520, 813], [200, 15], 'sum03L'],
+            [[520, 129], [200, 15], 'sum03Lb'],
             # 13L
             [[583, 844], [70, 15], 'sum13L'],
             [[583, 101], [70, 15], 'sum13Lb'],
             # 22L
-            [[400, 857], [10, 20], 'sum22L'],
-            [[400, 88], [10, 20], 'sum22Lb'],
+            [[462, 857], [10, 20], 'sum22L'],
+            [[462, 88], [10, 20], 'sum22Lb'],
             # 
             [[595, 939], [10, 10],  [390, 949], [10, 10], 'sum23L'],
             [[480, 960], [50, 15], 'sum31L'],
@@ -153,10 +153,10 @@ if flag_load_raw_data:
             [[385, 430], [30,30], 'sumBKG1'],
             ]
     #### Plot to define roi
-    fig = plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(fn_out)
+    fig = plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(filename+'\n'+fn_out)
     ax = fig.add_subplot(111)
     ax.imshow(np.log10(data_avg), vmin=1.1, vmax=1.8)
-    peaks.get_peaks(infiles[0], peak_list, verbose=2)
+    peaks.get_peaks(infiles[0], peak_list, phi_max=180, verbose=2)
     
     ## Save png
     fn_out = out_dir+filename+'_peak_roi.png'
@@ -178,12 +178,12 @@ if flag_get_peaks:
     flag_load_parellel = 0  # Sometimes parallel doesn't work..
     if flag_load_parellel:
         with Parallel(n_jobs=3) as parallel:
-            results = parallel( delayed(peaks.get_peaks)(infile, peak_list, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG) for infile in infiles )
+            results = parallel( delayed(peaks.get_peaks)(infile, peak_list, phi_max=180, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG) for infile in infiles )
     else:
         results = []
         for ii, infile in enumerate(infiles):
             #if ii%10==0:
-            temp = peaks.get_peaks(infile, peak_list, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG)
+            temp = peaks.get_peaks(infile, peak_list, phi_max=180, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG)
             results.append(temp)
     print("\nLoad data and define peak roi: {:.0f} s".format(time.time()-t0))
     
