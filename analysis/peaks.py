@@ -9,6 +9,8 @@ import pandas as pd
 import tomopy
 import copy
 
+import util
+
 # =============================================================================
 # Crop array
 # =============================================================================
@@ -21,19 +23,6 @@ def ArrayCrop(data=None, center=None, size=None):
     y_start = center[1] - int(size[1]/2)
     y_end = center[1] +int(size[1]/2)
     return data[x_start:x_end, y_start:y_end]
-
-# =============================================================================
-# Plot a box
-# =============================================================================
-def plot_box(center, size, color='r'):
-    x_start = center[0] - int(size[0]/2)
-    x_end = center[0] + int(size[0]/2)
-    y_start = center[1] - int(size[1]/2)
-    y_end = center[1] +int(size[1]/2)
-    plt.plot([y_start, y_end], [x_start, x_start], color=color)
-    plt.plot([y_start, y_end], [x_end, x_end], color=color)
-    plt.plot([y_start, y_start], [x_start, x_end], color=color)
-    plt.plot([y_end, y_end], [x_start, x_end], color=color)
 
 # =============================================================================
 # Substract background
@@ -104,7 +93,7 @@ def LinearSubBKG_temp(data):
 # =============================================================================
 # Get peak intensity (based on specified ROI) from raw data (tiff files)    
 # =============================================================================
-def get_peaks(infile, peak_list, verbose = 0, flag_LinearSubBKG = 0):
+def get_peaks(infile, peak_list, phi_max=360, verbose = 0, flag_LinearSubBKG = 0):
     if verbose>0: print(infile)        
     if verbose>1: print('Parse param manually for now..\n')
     
@@ -113,7 +102,7 @@ def get_peaks(infile, peak_list, verbose = 0, flag_LinearSubBKG = 0):
     zigzag_n = int(temp[3])
     scan_n = int(temp[7])
     if zigzag_n%2==0:
-        pos_phi = 360-float(temp[8])/2.0
+        pos_phi = phi_max-float(temp[8])/2.0
     else:
         pos_phi = float(temp[8])/2.0
 
@@ -129,37 +118,27 @@ def get_peaks(infile, peak_list, verbose = 0, flag_LinearSubBKG = 0):
         plt.figure(99); plt.clf()
         #plt.pcolormesh(np.log10(data_infile)) #,vmin=0.1,vmax=2.2); 
         plt.imshow(np.log10(data_infile))      
-
      
     for p in peak_list:
-        center = p[0]
-        #center[1] = center[1]+5 if center[1] <470 else center[1]
-        size = p[1]
-        peak = p[2]
-        if verbose>1: 
-            plot_box(center, size) 
-            plt.text(center[1], center[0], str(peak), color='r')
+        N_regions = (len(p)-1)/2 # number of regions for this peak
+        peak = p[-1]
+        peakarea_sum = 0
+        for ii in np.arange(0, N_regions):
+            center = p[int(ii*2)]
+            size = p[int(ii*2+1)]
+            if verbose>1: 
+                util.plot_box(center, size, color=[0.7, 0.7, 0.7]) 
+                plt.text(center[1], center[0]+30*np.random.rand(), str(peak[3:]), color='r')
+            
+            peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
+            if flag_LinearSubBKG:
+                [peakarea, BKG] = LinearSubBKG(peakarea)
+            peakarea_sum = peakarea_sum + np.sum(peakarea)          
         
-        peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
-        if flag_LinearSubBKG:
-            [peakarea, BKG] = LinearSubBKG(peakarea)
-        peakarea_sum = np.sum(peakarea)          
         df[str(peak)] = peakarea_sum    
 
     return df
 
-# =============================================================================
-# Check if file exists, append file name with number
-# =============================================================================
-def check_file_exist(fn):
-    ii=0  
-    fn_out = copy.deepcopy(fn)
-    while os.path.exists(fn_out):
-        ii = ii+1
-        fn_out = fn +'_{:d}'.format(ii)
-    print('Saving to {}'.format(fn_out))
-    
-    return fn_out
 
 # =============================================================================
 # Calculate ROI area 

@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import os, glob, time, sys
+HOME_PATH = '/home/etsai/BNL/Research/GIWAXS_tomo_2020C1/RLi6/'
+GI_TOMO_PATH = HOME_PATH+'GI_tomo/'
+GI_TOMO_PATH in sys.path or sys.path.append(GI_TOMO_PATH)
+
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -9,56 +13,29 @@ import pandas as pd
 import tomopy
 from joblib import Parallel, delayed
 from scipy import signal
-from fun_peaks import *
-from fun_tomo_recon import *
+
+import analysis.peaks as peaks
+import analysis.tomo as tomo
+import analysis.seg as seg
+import analysis.util as util
 
 # =============================================================================
 # Specify input
 # =============================================================================
-source_dir = '../../raw/'
-out_dir = '../results_tomo/'
+os.chdir(HOME_PATH)
+source_dir = './waxs/raw/'
+out_dir = './results_tomo/'
 infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))
 N_files = len(infiles); print('N_files = {}'.format(N_files))
-#for ii in [2,3]: infiles.extend(glob.glob(os.path.join(source_dir, '*tomo_real_*00{}*.tiff'.format(ii))))
-# e.g. ../raw/C8BTBT_0.1Cmin_tomo_real_9_x-3.600_th0.090_1.00s_2526493_000656_waxs.tiff'
 
 flag_load_raw_data = 0
 flag_get_peaks = 0;  flag_LinearSubBKG = 1
 flag_load_peaks = 1
 flag_tomo = 1
 
-filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+5]
-#filename = 'C8BTBT_0.1Cmin_tomo'
+filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+4]
+print(filename)
 if os.path.exists(out_dir) is False: os.mkdir(out_dir)
-
-### Define peak roi from scattering pattern
-peak_list = [
-        # center, size, peak
-        [[575, 479], [60, 10], 'sum002'],
-        # 11L
-        [[525, 735], [180, 10], 'sum11L'],
-        [[525, 223], [180, 10], 'sum11Lb'],
-        # 02L
-        [[603, 787-3], [30, 10], 'sum02L'],
-        [[603, 172], [30, 10], 'sum02Lb'],
-        # 12L
-        [[589, 848], [58, 6], 'sum12L'], 
-        [[589, 110], [58, 6], 'sum12Lb'],
-        # 20L
-        [[323-6, 903], [60, 15], 'sum20L'],
-        [[323, 56], [30, 15], 'sum20Lb'],
-        # 21L
-        [[280, 936], [40, 15], 'sum21L'],
-        [[280, 26], [40, 15], 'sum21Lb'],
-        # Si
-        [[400, 809], [12, 12], 'sumSi'],
-        [[400, 151], [12, 12], 'sumSib'],
-        # background
-        [[560, 440], [30,30], 'sumBKG0'],
-        ]
-fn_out = out_dir+'peak_list'
-fn_out = check_file_exist(fn_out)
-np.save(fn_out, peak_list)
 
 
 # =============================================================================
@@ -79,45 +56,118 @@ if flag_load_raw_data:
     data_avg = data_sum/np.size(infiles)*fraction    
     print("Data loading: {:.0f} s".format(time.time()-t0))
         
-    # Plot
+    # Plot    
     plt.figure(1); plt.clf()
-    plt.imshow(np.log10(data_avg), vmin=0.6, vmax=1.5)
+    plt.imshow(np.log10(data_avg), vmin=1.1, vmax=1.8)
     plt.colorbar()
     plt.title('Average over {} data (fraction=1/{}) \n {}'.format(N_files,fraction,infiles[0]))
-    fn_out = out_dir+filename+'_avg'
-    fn_out = check_file_exist(fn_out)
+    
+    # Save png
+    fn_out = out_dir+filename+'_avg.png'
+    fn_out = util.check_file_exist(fn_out)
     plt.savefig(fn_out, format='png')
 
     # Save as npy
     fn_out = out_dir+'data_avg'
-    fn_out = check_file_exist(fn_out)
+    fn_out = util.check_file_exist(fn_out)
     np.save(fn_out, data_avg)
     if False:
+        fn_out = out_dir+'data_avg'
         data_avg = np.load(fn_out+'.npy')
     
-    #### Plot to define roi
-    plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(fn_out)
-    plt.imshow(np.log10(data_avg), vmin=0.3, vmax=1.5); plt.colorbar()    
-    get_peaks(infiles[0], verbose=2)
-    
-    fn_out = out_dir+filename+'_peak_roi'
-    fn_out = check_file_exist(fn_out)
-    plt.savefig(fn_out, format='png')
-    
     # Save as tiff
-    if False:
+    if True:
         final_img = Image.fromarray((data_avg).astype(np.uint32))
-        infile_done = 'CBTBT_0.1Cmin_tomo_real_data_avg.tiff'
+        infile_done = out_dir+filename+'_data_avg.tiff'
         final_img.save(infile_done)     
         
+        # Plot qr (after use SciAnalysis on the tiff file)
+        if True:
+            fn = './waxs/analysis/qr_image/TOMO_T1_real_data_avg.npz'
+            qinfo = np.load(fn)
+            qr_image = qinfo['image']
+            x_axis = qinfo['x_axis']
+            y_axis = qinfo['y_axis']
+            extent = (np.nanmin(x_axis), np.nanmax(x_axis), np.nanmin(y_axis), np.nanmax(y_axis))
+            plt.figure(11, figsize=[12,8]); plt.clf()
+            plt.imshow(np.log10(qr_image), origin='bottom', extent=extent, vmin=1.1, vmax=1.8) 
+            plt.ylim(0, np.nanmax(y_axis))
+            plt.grid(axis='x'); plt.colorbar()
+            plt.title(fn)
+            
+            fn_out = out_dir+filename+'_qr.png'
+            plt.savefig(fn_out, format='png')
+        
         # Load and plot
-        temp = Image.open(infile_done).convert('I') # 'I' : 32-bit integer pixels
-        data_avg_infile = np.copy( np.asarray(temp) )
-        plt.figure(2); plt.clf()
-        plt.imshow(data_avg_infile)
-        plt.clim(0, 20)
-        plt.colorbar()
-        plt.show()
+        if False:
+            temp = Image.open(infile_done).convert('I') # 'I' : 32-bit integer pixels
+            data_avg_infile = np.copy( np.asarray(temp) )
+            plt.figure(2); plt.clf()
+            plt.imshow(data_avg_infile)
+            plt.clim(0, 20)
+            plt.colorbar()
+            plt.show()
+    
+    ### Define peak roi from scattering pattern
+    peak_list = [
+            # center, size, peak
+            [[575, 471], [60, 10], 'sum002'],
+            # 01L
+            [[445, 577], [40, 10], 'sum01L'],
+            [[445, 366], [40, 10], 'sum01Lb'],
+            # 11L
+            [[520, 654], [200, 20], 'sum11L'],
+            [[520, 291], [200, 20], 'sum11Lb'],
+            # 02L
+            [[605, 688], [100, 10], 'sum02L'],
+            [[574, 255], [30, 10], 'sum02Lb'],
+            [[189, 679], [10, 10], 'sum02Lx'],
+            [[189, 262], [10, 10], 'sum02Lbx'],
+            # 12L
+            [[540, 737], [230, 15], 'sum12L'], 
+            [[520, 206], [200, 15], 'sum12Lb'],
+            # 20L
+            [[540, 770], [230, 16], 'sum20L'],
+            [[520, 173], [200, 16], 'sum20Lb'],
+            # 21L
+            [[520, 794], [200, 15], 'sum21L'],
+            [[520, 151], [200, 15], 'sum21Lb'],
+            # 03L
+            [[520, 813], [200, 15], 'sum03L'],
+            [[520, 129], [200, 15], 'sum03Lb'],
+            # 13L
+            [[583, 844], [70, 15], 'sum13L'],
+            [[583, 101], [70, 15], 'sum13Lb'],
+            # 22L
+            [[462, 857], [10, 20], 'sum22L'],
+            [[462, 88], [10, 20], 'sum22Lb'],
+            # 
+            [[595, 939], [10, 10],  [390, 949], [10, 10], 'sum23L'],
+            [[480, 960], [50, 15], 'sum31L'],
+            #[[465, 969], [10, 10], 'sum31L'],
+            # Si
+            #[[400, 809], [12, 12], 'sumSi'],
+            #[[400, 151], [12, 12], 'sumSib'],
+            # background
+            [[570, 430], [30,30], 'sumBKG0'],
+            [[385, 430], [30,30], 'sumBKG1'],
+            ]
+    #### Plot to define roi
+    fig = plt.figure(100, figsize=[12,12]); plt.clf(); plt.title(filename+'\n'+fn_out)
+    ax = fig.add_subplot(111)
+    ax.imshow(np.log10(data_avg), vmin=1.1, vmax=1.8)
+    peaks.get_peaks(infiles[0], peak_list, phi_max=180, verbose=2)
+    
+    ## Save png
+    fn_out = out_dir+filename+'_peak_roi.png'
+    fn_out = util.check_file_exist(fn_out)
+    plt.savefig(fn_out, format='png')
+    
+    # Save peak_list in npy
+    fn_out = out_dir+'peak_list'
+    fn_out = util.check_file_exist(fn_out)
+    np.save(fn_out, peak_list)
+
         
 # =============================================================================
 # Get peaks from raw tiff files
@@ -128,12 +178,12 @@ if flag_get_peaks:
     flag_load_parellel = 0  # Sometimes parallel doesn't work..
     if flag_load_parellel:
         with Parallel(n_jobs=3) as parallel:
-            results = parallel( delayed(get_peaks)(infile, peak_list, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG) for infile in infiles )
+            results = parallel( delayed(peaks.get_peaks)(infile, peak_list, phi_max=180, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG) for infile in infiles )
     else:
         results = []
         for ii, infile in enumerate(infiles):
             #if ii%10==0:
-            temp = get_peaks(infile, peak_list, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG)
+            temp = peaks.get_peaks(infile, peak_list, phi_max=180, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG)
             results.append(temp)
     print("\nLoad data and define peak roi: {:.0f} s".format(time.time()-t0))
     
@@ -146,12 +196,13 @@ if flag_get_peaks:
     print(df_peaks.columns)
     
     # Save 
-    fn_out = out_dir+'df_peaks_all_subbgk{}'.format(flag_LinearSubBKG)
-    fn_out = check_file_exist(fn_out)
+    fn_out = out_dir+'df_peaks_all_subbg{}'.format(flag_LinearSubBKG)
+    fn_out = util.check_file_exist(fn_out)
     df_peaks.to_csv(fn_out)
  
     # Calculate area
     areas = calc_area_peakROI(peak_list)
+
     
 # =============================================================================
 # Get sino for each peak
@@ -161,24 +212,24 @@ if flag_load_peaks:
 
 ## Create sino from pd data
 list_peaks = []
-data_sort, sino_dict = get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=1, flag_thr=1) #flag_thr=2 for binary
+data_sort, sino_dict = tomo.get_sino_from_data(df_peaks, list_peaks=list_peaks, flag_rm_expbg=1, thr=0.5, binary=None) 
 print(sino_dict['list_peaks'])
-sino_sum = get_sino_sum(sino_dict)
-sino_dict['areas'] = calc_area_peakROI(peak_list) #assuming list_peaks are the same as peak_list
+sino_sum = tomo.get_sino_sum(sino_dict)
+sino_dict['areas'] = peaks.calc_area_peakROI(peak_list) #assuming list_peaks are the same as peak_list
 
 ## Plot sino
-plot_sino(sino_dict, fignum=30, title_st=filename, vlog10=[0, 5.5])
+tomo.plot_sino(sino_dict, fignum=30, title_st=filename, vlog10=[0, 5.5])
 
 fn_out = out_dir+filename+'peaks_sino' 
-fn_out = check_file_exist(fn_out)
+fn_out = util.check_file_exist(fn_out)
 plt.savefig(fn_out, format='png')
     
 ## Do and plot recon
 if flag_tomo:
-    recon_all = get_plot_recon(sino_dict, rot_center=32, algorithms = ['gridrec', 'fbp', 'tv'], fignum=40)
+    recon_all = tomo.get_plot_recon(sino_dict, rot_center=32, algorithms = ['gridrec', 'fbp', 'tv'], fignum=40)
 
     fn_out = out_dir+filename+'peaks_sino_tomo_subbg'+str(flag_LinearSubBKG); 
-    fn_out = check_file_exist(fn_out)
+    fn_out = tomo.check_file_exist(fn_out)
     plt.savefig(fn_out, format='png')
 
    
@@ -195,14 +246,14 @@ plt.figure(10, figsize=[15, 8]); plt.clf()
 for ii, peak in enumerate(list_peaks[0:-1]):
 #peak =  'sum20L'
 #if 1:
-    sino, sum_sino, theta = get_sino_from_a_peak(sino_dict, peak) # which peak roi
+    sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, peak) # which peak roi
     if flag_log10: 
         sum_sino = np.log10(sum_sino)
     plt.subplot(N,1,ii+1)
     plt.plot(theta, sum_sino);  
     plt.axis('off')     
     plt.legend([peak], loc='upper left')
-    peaks_idx = label_peaks(theta, sum_sino, onedomain=1)
+    peaks_idx = peaks.label_peaks(theta, sum_sino, onedomain=1)
     
     # Store peaks and corresponding angles to a df for reconstructing a domain
     for angle in theta[peaks_idx]:
@@ -213,7 +264,7 @@ for ii, peak in enumerate(list_peaks[0:-1]):
 # Save to png
 if flag_save_png:
     fn_out = out_dir+'peak_deg' #+peak
-    fn_out = check_file_exist(fn_out)
+    fn_out = util.check_file_exist(fn_out)
     plt.savefig(fn_out, format='png')
 
 # =============================================================================
@@ -229,14 +280,14 @@ list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='s
 list_peaks_angles_orig = list_peaks_angles_orig.drop([24])   #list_peaks_angles_orig.copy()
 list_peaks_angles_orig = list_peaks_angles_orig.drop([29]) 
 print(list_peaks_angles_orig)
-plot_angles(list_peaks_angles_orig['angle'], fignum=45)    
+tomo.plot_angles(list_peaks_angles_orig['angle'], fignum=45)    
 
 
 # =============================================================================
 # Different domains
 # =============================================================================
 plt.figure(200, figsize=[20, 10]); plt.clf()
-sino, sum_sino, theta = get_sino_from_a_peak(sino_dict, 'sum11L') #choose
+sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, 'sum11L') #choose
 plt.plot(theta, sum_sino);  
 peaks_idx = label_peaks(theta, sum_sino, onedomain=0)
 print(*theta[peaks_idx], sep=', ')
@@ -264,22 +315,22 @@ for ii, offset in enumerate(domain_angle_offset):
     ## Get sino
     flag_normal = 3 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
     width = 2
-    sino_dm = get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
+    sino_dm = tomo.get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
     ## Plot sino
     title_st = '{}\nflag_normal={}'.format(filename, flag_normal) if ii==0 else ''
     plt.subplot(2,len(domain_angle_offset),ii+1)
-    plot_sino((sino_dm), theta = sino_dict['theta'], axis_x = sino_dict['axis_x'], title_st=title_st, fignum=-1)
+    tomo.plot_sino((sino_dm), theta = sino_dict['theta'], axis_x = sino_dict['axis_x'], title_st=title_st, fignum=-1)
     #plot_angles(list_peaks_angles['angle'], fignum=51)    
     
     ## Tomo recon
     plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
     title_st = '[{}] ori={}$^\circ$'.format(ii,offset)
-    temp = get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=30, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
+    temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=30, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
     sino_all_list.append(sino_dm)
     recon_all_list.append(np.squeeze(temp['_fbp']))
         
 fn_out = out_dir+'recon'
-fn_out = check_file_exist(fn_out)
+fn_out = util.check_file_exist(fn_out)
 plt.savefig(fn_out, format='png')
 
 
@@ -299,7 +350,7 @@ for ii in domains_use:
             thr = 0.55
         else:
             thr = 0.55
-        recon_plot = do_thr(recon, thr)
+        recon_plot = seg.do_thr(recon, thr)
         
     else: ## Segmentation
         center = np.unravel_index(np.argmax(recon, axis=None), recon.shape)
@@ -311,11 +362,11 @@ for ii in domains_use:
             centers = [center, [18,27]]
         else:
             centers = [center]
-        recon_plot = do_segmentation(recon, centers, width=2, fignum=0)
+        recon_plot = seg.do_segmentation(recon, centers, width=2, fignum=0)
     
     ## Plot
     ax = plt.subplot2grid((7, 7), (channel, 0), colspan=2); 
-    image_channel = np.asarray(image_RGB(recon_plot, rgb[channel]))
+    image_channel = np.asarray(util.image_RGB(recon_plot, rgb[channel]))
     if overlay==[]:
         overlay = image_channel
     else: 
@@ -332,7 +383,7 @@ plt.title('thr = {}'.format(thr))
 
 ## Save to png
 if flag_save_png:
-    fn_out = out_dir+'recon_overlay{}{}{}'.format(overlay_rgb[0], overlay_rgb[1], overlay_rgb[2])
+    fn_out = out_dir+'recon_overlay{}{}{}'.format(domains_use[0], domains_use[1], domains_use[2])
     fn_out = check_file_exist(fn_out)
     plt.savefig(fn_out, format='png')
 
@@ -394,7 +445,7 @@ plt.title('orientation angles {}\nthr = {}'.format(temp_angle, thr))
 ## Save to npy
 if 1:    
     fn_out = out_dir+'domains_recon'
-    fn_out = check_file_exist(fn_out)
+    fn_out = util.check_file_exist(fn_out)
     plt.savefig(fn_out, format='png')
     
     fn_out = out_dir+'domains_recon.npy'

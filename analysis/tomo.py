@@ -10,7 +10,7 @@ from scipy.signal import find_peaks
 # =============================================================================
 # Load dataframe into a dictionary and do preprocessing
 # =============================================================================
-def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0, flag_align=1):
+def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, thr=None, binary=None, flag_align=0):
     
     if list_peaks==[]:
         aa = [1 if 'sum' in temp else 0 for temp in data.keys()]
@@ -47,14 +47,13 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, flag_thr=0, flag_al
         #proj = proj[:,:,6:]
         #proj = pow(proj,1.2)    
         
-        if flag_thr>0:
-            print('NOTE: flag_thr>0, proj[proj<((np.median(proj)*7))] = 1')
-            thr = np.median(proj)*7
-            print('thr = {}'.format(thr))
-            proj[proj<thr] = 1
-            if flag_thr==2: 
-                print('NOTE: proj[proj>=thr] = 100')
-                proj[proj>=thr] = 100
+        if thr is not None:
+            print('NOTE: proj[proj<np.median(proj)*thr] = 1')
+            proj[proj<np.max(proj)*thr] = 1
+            
+        if thr is not None and binary is not None: 
+                print('NOTE: proj[proj>=thr] = binary')
+                proj[proj>=thr] = binary
             
         if flag_align:                
             print('NOTE: Manually align sino')
@@ -341,46 +340,7 @@ def label_peaks(line_x, line_y, onedomain=0, axis_flip=0):
         
     return peaks
 
-
-# =============================================================================
-# Generate a random color
-# =============================================================================
-def rand_color(a, b):
-    r = b-a
-    color = (np.random.random()*r+a, np.random.random()*r+a, np.random.random()*r+a)
-    return color
-    
-    
-# =============================================================================
-# Return image stack with RGB channels
-# =============================================================================
-def image_RGB(image, rgb):
-    dim = image.shape
-    image_stack = np.zeros([dim[0], dim[1], 3])    
-    if 'R' in rgb:
-        image_stack[:,:,0] = image
-    if 'G' in rgb:
-        image_stack[:,:,1] = image     
-    if 'B' in rgb:
-        image_stack[:,:,2] = image
-    if 'W' in rgb:
-        image_stack[:,:,0] = image
-        image_stack[:,:,1] = image
-        image_stack[:,:,2] = image
-    if 'C' in rgb:
-        image_stack[:,:,1] = image
-        image_stack[:,:,2] = image
-    if 'M' in rgb:
-        image_stack[:,:,0] = image
-        image_stack[:,:,2] = image           
-    if 'Y' in rgb:
-        image_stack[:,:,0] = image
-        image_stack[:,:,1] = image          
-        
-    return image_stack
    
-    
-    
-    
+
     
     
