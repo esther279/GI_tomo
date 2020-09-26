@@ -376,11 +376,20 @@ mask_nan[mask==0] = np.nan
 temp_angle = domain_angle_offset[domains_use]
 domains_recon = mask_nan*temp_angle[np.argmax(recon_all_list_normal,0)]
 
+##------ Load mask
 plt.figure(22); plt.clf()
-plt.imshow(domains_recon, cmap='summer')
-plt.colorbar()
-plt.title('orientation angles {}'.format(temp_angle))
+x = np.asarray(Image.open("../../tomo2_mask_50.png").convert("L").rotate(0).resize((48,48)))
+x = np.pad(x, [(0, 2), (0, 2)], mode='constant', constant_values=0)
+x = np.roll(x, 3, axis=0)
+x = np.roll(x, 0, axis=1)
+plt.imshow(x, alpha = 1, cmap='gray')
+x = x.astype('float')
+x[x>0] = 1.0
+x[x==0] = np.nan
 
+plt.imshow(domains_recon*x, cmap='summer', alpha = 0.9)
+plt.colorbar()
+plt.title('orientation angles {}\nthr = {}'.format(temp_angle, thr))
 
 ## Save to npy
 if 1:    
