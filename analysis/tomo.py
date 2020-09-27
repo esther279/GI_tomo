@@ -49,7 +49,7 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, thr=None, binary=No
         
         if thr is not None:
             print('NOTE: proj[proj<np.median(proj)*thr] = 1')
-            proj[proj<np.max(proj)*thr] = 1
+            proj[proj<np.median(proj)*thr] = 1
             
         if thr is not None and binary is not None: 
                 print('NOTE: proj[proj>=thr] = binary')
@@ -156,7 +156,7 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
 # =============================================================================
 # Do recon and plot
 # =============================================================================
-def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'gridrec', 'fbp'], title_st='recon', fignum=40, colorbar=False):
+def get_plot_recon(sino_data, theta = [], rot_center=0, algorithms = ['art', 'gridrec', 'fbp'], title_st=[], fignum=40, colorbar=False):
     if type(sino_data)==dict:
         sino_allpeaks = sino_data['sino_allpeaks']
         theta = sino_data['theta']
@@ -197,7 +197,7 @@ def get_plot_recon(sino_data, theta = [], rot_center=10, algorithms = ['art', 'g
         
         #rot_center = cen_init
         #plt.figure(50)
-        print(rot_center)
+        print('rot_center = {}'.format(rot_center))
         for jj, algo in enumerate(algorithms):
             recon = tomopy.recon(sino, theta_rad, center=rot_center, algorithm=algo)
             recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
