@@ -318,25 +318,30 @@ def plot_angles(angles_deg, fignum=100, color='r'):
     
 # =============================================================================
 #  Find and label peaks   
+#  onedomain = 1 to (attempt to) find peaks corresponding to the same domain
 # =============================================================================
-def label_peaks(line_x, line_y, onedomain=0, axis_flip=0):
+def label_peaks(line_x, line_y, onedomain=0, axis_flip=0, fontsize=9):
+    
     if onedomain:
-        peaks, _ = find_peaks(line_y, height=np.mean(line_y)*1.5, distance=38/(line_x[1]-line_x[0])) #prominence=(0.2, None)) #width=2,
+        peaks, _ = find_peaks(line_y, height=np.mean(line_y)*1.7, distance=38/(line_x[1]-line_x[0])) #prominence=(0.2, None)) #width=2,
     else:
         peaks, _ = find_peaks(line_y, height=np.mean(line_y)*0.5)
 
     ylim = [np.nanmin(line_y[line_y != -np.inf]), np.nanmax(line_y)]
     yrange = ylim[1]-ylim[0]
+    
     for idx_p, peak in enumerate(peaks):
         if axis_flip==0:
             #plt.plot([line_x[peak], line_x[peak]], ylim, '--', color=rand_color(0.4, 0.5)) #rand_color(0.3, 0.9)
-            plt.text(line_x[peak], line_y[peak]*0.6+(idx_p%5+1)*yrange*0.05, str(np.round(line_x[peak],3)),fontweight='bold')
+            plt.text(line_x[peak], line_y[peak]*0.6+(idx_p%5+1)*yrange*0.05, str(np.round(line_x[peak],3)),fontweight='bold', fontsize=fontsize)
         else:
             #plt.plot(ylim, [line_x[peak], line_x[peak]], '--', color=rand_color(0.4, 0.5))
-            plt.text(line_y[peak]*0.9, line_x[peak], str(np.round(line_x[peak],3)),fontweight='bold')
+            plt.text(line_y[peak]*0.9, line_x[peak], str(np.round(line_x[peak],3)),fontweight='bold', fontsize=fontsize)
     
     if axis_flip: 
         plt.gca().invert_yaxis()
+        
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
         
     return peaks
 

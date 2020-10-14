@@ -29,6 +29,7 @@ out_dir = './results_tomo/'
 infiles = glob.glob(os.path.join(source_dir, '*BTBT_TOMO_test3_*.tiff'))
 N_files = len(infiles); print('N_files = {}'.format(N_files))
 
+## Get ROI for each peak from 2D data
 filename_peak = './GI_tomo/param/BTBT_peaks.txt'
 peak_list = io.read_peak_list(filename_peak)
 
@@ -227,11 +228,22 @@ for ii, peak in enumerate(list_peaks[0:-1]):
     plt.subplot(N,1,ii+1)
     plt.plot(theta, sum_sino);  
     plt.axis('off')     
-    plt.legend([peak], loc='upper left')
+    plt.legend([peak], loc='upper left', fontsize=6)
     
     peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=1)
     
-    # Store peaks and corresponding angles to a df for reconstructing a domain
+    ## Store peaks and corresponding angles to a df for reconstructing ONE domain
+    ''' Example
+    x = {}; jj=0
+    #sum20L
+    x[jj] = pd.DataFrame([[28.5, 'sum20L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[209, 'sum20L']], columns=['angle','peak']); jj = jj+1
+    #sum21L
+    x[jj] = pd.DataFrame([[51, 'sum21L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[190, 'sum21L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[231, 'sum21L']], columns=['angle','peak']); jj = jj+1
+    x[jj] = pd.DataFrame([[10, 'sum21L']], columns=['angle','peak']); jj = jj+1
+    '''
     for angle in theta[peaks_idx]:
         if 1: #angle<181: #why
             x[jj] = pd.DataFrame([[angle, peak]], columns=['angle','peak'])
@@ -278,9 +290,12 @@ if flag_save_png:
 plt.figure(25, figsize=[20, 10]); plt.clf()
 peak_strong = 'sum11L'
 sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, 'sum11L') #choose
+plt.subplot(1,2,1)
+plt.imshow(sino); plt.axis('auto'); plt.ylabel('rotational angle in deg')
+plt.subplot(1,2,2)
 plt.plot(theta, sum_sino);  
 plt.title('sum_sino for {}'.format(peak_strong)); plt.grid()
-peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=0)
+peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=0, fontsize=8)
 print(*theta[peaks_idx], sep=', ')
 
 if flag_save_png:
