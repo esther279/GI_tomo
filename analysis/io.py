@@ -35,10 +35,10 @@ def read_peak_list(filename):
                 l = l[l.find('],')+2:]
                 temp.append(x)            
                 
-                y = l[l.find('[')+1:l.find(']')].split(" ")
-                y = [int(a.replace(",","")) for a in y]
+                roi = l[l.find('[')+1:l.find(']')].split(" ")
+                roi = [int(a.replace(",","")) for a in roi]
                 l = l[l.find(']'):]
-                temp.append(y)
+                temp.append(roi)
                 
                 index = l[l.find('\'')+1:l.find('\']')]
                 temp.append(index)

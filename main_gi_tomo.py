@@ -29,8 +29,8 @@ out_dir = './results_tomo/'
 infiles = glob.glob(os.path.join(source_dir, '*BTBT_TOMO_test3_*.tiff'))
 N_files = len(infiles); print('N_files = {}'.format(N_files))
 
-filename_peak = './BTBT_peaks.txt'
-peak_list = read_peak_list(filename_peak)
+filename_peak = './GI_tomo/param/BTBT_peaks.txt'
+peak_list = io.read_peak_list(filename_peak)
 
 flag_load_raw_data = 0
 flag_get_peaks = 0;  flag_LinearSubBKG = 1
@@ -116,7 +116,7 @@ if flag_load_raw_data:
             plt.show()
     
     ####### Define peak roi from scattering pattern
-    peak_list = read_peak_list(filename_peak)
+    peak_list = io.read_peak_list(filename_peak)
 
     #### Plot to define roi
     fig = plt.figure(5, figsize=[12,12]); plt.clf(); plt.title(filename+'\n'+fn_out)
@@ -168,7 +168,7 @@ if flag_get_peaks:
     df_peaks.to_csv(fn_out)
  
     # Calculate area
-    areas = calc_area_peakROI(peak_list)
+    areas = peaks.calc_area_peakROI(peak_list)
 
     
 # =============================================================================
@@ -334,7 +334,7 @@ if flag_save_png:
 # =============================================================================
 # Overlap three domains spatially
 # =============================================================================
-domains_use = [0, 1, 3, 4, 6, 7, 8]   #overlay these domains
+domains_use = [0, 1, 2]   #overlay these domains
 rgb = 'RGBWCMY'
 channel=0; overlay = []
 
@@ -410,7 +410,7 @@ plt.imshow(recon_merged)
 # =============================================================================
 # Generate a guess 
 # =============================================================================
-domains_use = [0, 3, 4, 6]  #np.arange(0, len(recon_all_list))
+domains_use = [0, 1, 2]  #np.arange(0, len(recon_all_list))
 recon_all_list_normal = []
 
 for ii in domains_use:      
@@ -426,14 +426,17 @@ domains_recon = mask_nan*temp_angle[np.argmax(recon_all_list_normal,0)]
 
 ##------ Load mask
 plt.figure(45); plt.clf()
-x = np.asarray(Image.open("../../tomo2_mask_50.png").convert("L").rotate(0).resize((48,48)))
-x = np.pad(x, [(0, 2), (0, 2)], mode='constant', constant_values=0)
-x = np.roll(x, 3, axis=0)
-x = np.roll(x, 0, axis=1)
-plt.imshow(x, alpha = 1, cmap='gray')
-x = x.astype('float')
-x[x>0] = 1.0
-x[x==0] = np.nan
+if 0:
+    x = np.asarray(Image.open("../../tomo2_mask_50.png").convert("L").rotate(0).resize((48,48)))
+    x = np.pad(x, [(0, 2), (0, 2)], mode='constant', constant_values=0)
+    x = np.roll(x, 3, axis=0)
+    x = np.roll(x, 0, axis=1)
+    plt.imshow(x, alpha = 1, cmap='gray')
+    x = x.astype('float')
+    x[x>0] = 1.0
+    x[x==0] = np.nan
+else:
+    x = 1
 
 #x = 1
 plt.imshow(domains_recon*x, cmap='summer', alpha = 0.9)
