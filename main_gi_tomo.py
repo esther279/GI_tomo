@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os, glob, time, sys
-HOME_PATH = '/home/etsai/BNL/Research/GIWAXS_tomo_2020C1/RLi6/'
+HOME_PATH = '/home/etsai/BNL/Research/GIWAXS_tomo_2019C2/RLi2_TOMO_data_201902/RLi2/waxs/'
 GI_TOMO_PATH = HOME_PATH+'GI_tomo/'
 GI_TOMO_PATH in sys.path or sys.path.append(GI_TOMO_PATH)
 
@@ -18,15 +18,19 @@ import analysis.peaks as peaks
 import analysis.tomo as tomo
 import analysis.seg as seg
 import analysis.util as util
-
+import analysis.io as io
 # =============================================================================
 # Specify input
 # =============================================================================
 os.chdir(HOME_PATH)
-source_dir = './waxs/raw/'
+source_dir = './raw/'
 out_dir = './results_tomo/'
-infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))
+#infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))
+infiles = glob.glob(os.path.join(source_dir, '*BTBT_TOMO_test3_*.tiff'))
 N_files = len(infiles); print('N_files = {}'.format(N_files))
+
+filename_peak = './BTBT_peaks.txt'
+peak_list = read_peak_list(filename_peak)
 
 flag_load_raw_data = 0
 flag_get_peaks = 0;  flag_LinearSubBKG = 1
@@ -34,7 +38,8 @@ flag_load_peaks = 1
 flag_tomo = 1
 flag_save_png = 0
 
-filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+4]
+#filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+4]
+filename = infiles[0][infiles[0].find('BTBT'):infiles[0].find('test3_')+6]
 print(filename)
 if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 
@@ -111,49 +116,8 @@ if flag_load_raw_data:
             plt.show()
     
     ####### Define peak roi from scattering pattern
-    peak_list = [
-            # center, size, peak
-            [[575, 471], [60, 10], 'sum002'],
-            # 01L
-            [[445, 577], [40, 10], 'sum01L'],
-            [[445, 366], [40, 10], 'sum01Lb'],
-            # 11L
-            [[520, 654], [200, 20], 'sum11L'],
-            [[520, 291], [200, 20], 'sum11Lb'],
-            # 02L
-            [[605, 688], [100, 10], 'sum02L'],
-            [[574, 255], [30, 10], 'sum02Lb'],
-            [[189, 679], [10, 10], 'sum02Lx'],
-            [[189, 262], [10, 10], 'sum02Lbx'],
-            # 12L
-            [[540, 737], [230, 15], 'sum12L'], 
-            [[520, 206], [200, 15], 'sum12Lb'],
-            # 20L
-            [[540, 770], [230, 16], 'sum20L'],
-            [[520, 173], [200, 16], 'sum20Lb'],
-            # 21L
-            [[520, 794], [200, 15], 'sum21L'],
-            [[520, 151], [200, 15], 'sum21Lb'],
-            # 03L
-            [[520, 813], [200, 15], 'sum03L'],
-            [[520, 129], [200, 15], 'sum03Lb'],
-            # 13L
-            [[583, 844], [70, 15], 'sum13L'],
-            [[583, 101], [70, 15], 'sum13Lb'],
-            # 22L
-            [[462, 857], [10, 20], 'sum22L'],
-            [[462, 88], [10, 20], 'sum22Lb'],
-            # 
-            [[595, 939], [10, 10],  [390, 949], [10, 10], 'sum23L'],
-            [[480, 960], [50, 15], 'sum31L'],
-            #[[465, 969], [10, 10], 'sum31L'],
-            # Si
-            #[[400, 809], [12, 12], 'sumSi'],
-            #[[400, 151], [12, 12], 'sumSib'],
-            # background
-            [[570, 430], [30,30], 'sumBKG0'],
-            [[385, 430], [30,30], 'sumBKG1'],
-            ]
+    peak_list = read_peak_list(filename_peak)
+
     #### Plot to define roi
     fig = plt.figure(5, figsize=[12,12]); plt.clf(); plt.title(filename+'\n'+fn_out)
     ax = fig.add_subplot(111)
@@ -239,7 +203,7 @@ if flag_tomo:
     recon_all = tomo.get_plot_recon(sino_dict, rot_center=28, algorithms = ['gridrec', 'fbp', 'tv'], fignum=15)
     if flag_save_png:
         fn_out = out_dir+'fig15_'+filename+'peaks_sino_tomo_subbg'+str(flag_LinearSubBKG); 
-        fn_out = tomo.check_file_exist(fn_out)
+        fn_out = util.check_file_exist(fn_out)
         plt.savefig(fn_out, format='png')
 
    
@@ -259,11 +223,12 @@ for ii, peak in enumerate(list_peaks[0:-1]):
 #if 1:
     sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, peak) # which peak roi
     if flag_log10: 
-        sum_sino = np.log10(sum_sino)
+        sum_sino = np.log10(sum_sino)    
     plt.subplot(N,1,ii+1)
     plt.plot(theta, sum_sino);  
     plt.axis('off')     
     plt.legend([peak], loc='upper left')
+    
     peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=1)
     
     # Store peaks and corresponding angles to a df for reconstructing a domain
@@ -279,14 +244,19 @@ if flag_save_png:
     plt.savefig(fn_out, format='png')
 
 # =============================================================================
-# Check angles      
+# Check angles or Load from file    
 # ============================================================================= 
 temp_list = pd.concat(x)
 print(temp_list) #print(list_peaks_angles_orig.sort_values('angle'))
 
 ## Remove peaks not needed for sino
+if 0:
+    list_peaks_angles_orig = temp_list[temp_list.peak !='sumSi']
+else:
+    temp = np.load('/home/etsai/BNL/Research/GIWAXS_tomo_2019C3/RLi/waxs/results_tomo/list_peaks_angles_orig.npy', allow_pickle=True)
+    list_peaks_angles_orig=pd.DataFrame(temp,columns=['angle','peak'])
+    
 print('## Compare the list with the figure and drop unwanted peaks.')
-list_peaks_angles_orig = temp_list[temp_list.peak !='sumSi']
 list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSib']
 #list_peaks_angles_orig = list_peaks_angles_orig.drop([24])   #list_peaks_angles_orig.copy()
 #list_peaks_angles_orig = list_peaks_angles_orig.drop([29]) 
@@ -334,7 +304,7 @@ list_peaks_angles = list_peaks_angles_orig.copy()
 plt.figure(30, figsize=[20, 10]); plt.clf()
 for ii, offset in enumerate(domain_angle_offset):  
     print(offset)
-    angles_old = list_peaks_angles_orig['angle']
+    angles_old = list_peaks_angles_orig['angle'] - 97 + 79
     angles_new = angles_old + offset
     list_peaks_angles['angle'] = angles_new
 
