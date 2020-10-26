@@ -303,18 +303,21 @@ def get_proj_from_sino(sino,  idx, width, flag_normal=1):
 # =============================================================================
 # Plot angles on polar coordinate
 # =============================================================================
-def plot_angles(angles_deg, fignum=100, color='r'):
+def plot_angles(angles_deg, fignum=100, color='r', labels=[]):
     angles_deg = np.asarray(angles_deg)
     angles_rad = np.asarray(angles_deg)/180*np.pi
     ones = np.ones(len(angles_deg))
     
     plt.figure(fignum); plt.clf()
     ax = plt.subplot(111, projection='polar')
-    ax.bar(angles_rad, ones, width=ones*0.01, color=color, alpha=0.4)
+    ax.bar(angles_rad, ones, width=ones*0.02, color=color, alpha=0.8)
     ax.set_rticks([]) 
+    ax.set_xticklabels([])
     
     for ii, angle in enumerate(angles_rad):
-        ax.text(angle, 1, str(angles_deg[ii]), fontweight='bold', color=color)
+        ax.text(angle, 1, str(angles_deg[ii]), color='k')
+        if labels != []:
+            ax.text(angle, 1.2, labels[ii], fontweight='bold', color=color)
     plt.show()
     
 # =============================================================================

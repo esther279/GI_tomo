@@ -9,7 +9,7 @@ import pandas as pd
 import tomopy
 import copy
 
-#import util
+import analysis.util as util
 
 # =============================================================================
 # Crop array
@@ -98,13 +98,14 @@ def get_peaks(infile, peak_list, phi_max=360, verbose = 0, flag_LinearSubBKG = 0
     if verbose>1: print('Parse param manually for now..\n')
     
     temp = infile.split('_')
-    pos_x = float(temp[4][1:])
-    zigzag_n = int(temp[3])
-    scan_n = int(temp[7])
+    a = 1
+    pos_x = float(temp[4+a][1:])
+    zigzag_n = int(temp[3+a])
+    scan_n = int(temp[7+a])
     if zigzag_n%2==0:
-        pos_phi = phi_max-float(temp[8])/2.0
+        pos_phi = phi_max-float(temp[8+a])/2.0
     else:
-        pos_phi = float(temp[8])/2.0
+        pos_phi = float(temp[8+a])/2.0
 
     df = pd.DataFrame({'pos_phi':pos_phi,
                    'pos_x':pos_x,
