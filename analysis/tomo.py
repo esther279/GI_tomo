@@ -316,8 +316,8 @@ def plot_angles(angles_deg, fignum=100, color='r', labels=[]):
     
     for ii, angle in enumerate(angles_rad):
         ax.text(angle, 1, str(angles_deg[ii]), color='k')
-        if labels != []:
-            ax.text(angle, 1.2, labels[ii], fontweight='bold', color=color)
+        if len(labels)>0:
+            ax.text(angle, 1.2, labels[ii][3:], fontweight='bold', color=color)
     plt.show()
     
 # =============================================================================
