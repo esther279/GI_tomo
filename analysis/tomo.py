@@ -357,6 +357,7 @@ def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=20, theory=0):
         #tt2.set_rotation(rotate/np.pi*180)
             
     plt.show()
+
     
 # =============================================================================
 #  Find and label peaks   
