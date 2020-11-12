@@ -41,11 +41,11 @@ if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 # 7) For each domain, generate sinogram and recon
 # 8-10) Post-processing/Visualization
 
-run_steps = [6,7,10] 
+run_steps = [10] 
 flag_LinearSubBKG = 1
 flag_load_peaks = 1 
-flag_save_png = 0
-flag_save_npy = 0
+flag_save_png = 1
+flag_save_npy = 1
 
 ## Get ROI for each peak from 2D data (step 2)
 filename_peak = './GI_tomo/param/S4_peaks.txt'
@@ -128,7 +128,7 @@ if 1 in run_steps:
 peak_list = io.read_peak_list(filename_peak)
 
 
-if 0:
+if 1:
     q_file = HOME_PATH+'analysis/q_image/TOMO_S4_sam3_R_10_x-3.400_th0.110_1.00s_42366_000000_waxs.npz'
     temp = np.load(q_file)
     q_image = temp['image']
@@ -136,9 +136,9 @@ if 0:
     y_axis = temp['y_axis'] 
     x_scale = temp['x_scale'] 
     y_scale = temp['y_scale'] 
-    fig = plt.figure(4, figsize=[8,8]); plt.clf(); 
-    X, Y = np.meshgrid(x_axis, y_axis)
-    plt.pcolormesh(X, Y, np.log10(q_image))
+    #fig = plt.figure(4, figsize=[8,8]); plt.clf(); 
+    #X, Y = np.meshgrid(x_axis, y_axis)
+    #plt.pcolormesh(X, Y, np.log10(q_image))
 
 
 #    calibration.set_beam_position(462, 1043-398)
@@ -153,7 +153,7 @@ if 2 in run_steps:
     ax.set_xlim(145,981)
     ax.set_ylim(670,0)
 
-    xticks = np.asarray([xcen+ii*109.6 for ii in np.arange(-4, 4.1, 1)])
+    xticks = np.asarray([471+ii*109.6 for ii in np.arange(-3, 4.1, 1)])
     xticklabels = ["{:5.1f}".format(i) for i in ((xticks-471)*x_scale)];
     ax.set_xticks(xticks)
     ax.set_xticklabels(xticklabels)
@@ -347,7 +347,7 @@ if 5 in run_steps:
     #list_peaks_angles_orig = list_peaks_angles_orig.drop(rm)
 
     print(list_peaks_angles_orig)
-    tomo.plot_angles(list_peaks_angles_orig['angle'], labels=list_peaks_angles_orig['peak'], fignum=21)    
+    tomo.plot_angles(list_peaks_angles_orig['angle']+90, labels=list_peaks_angles_orig['peak'], color='b', FS=14, fignum=21)    
     
     if flag_save_png:
         fn_out = out_dir+'fig21_angles' #+peak
@@ -381,10 +381,11 @@ if 6 in run_steps:
 
     ####### Specify domains
     print('## Select the main peaks for reconstruction of different domains. See above for recommendations.')
-    #domain_angle_offset = np.asarray([6.5, 11.5, 14.5, 23.5, 33, 165.5, 173.0]) 
-    domain_angle_offset = np.arange(6, 180, 3)
-    #domain_angle_offset = np.asarray([154.0, 157.5, 160.5, 161.5, 165.5, 170.5, 171.5, 188.5, 189.5,]) - 165.5
-    #domain_angle_offset = np.append(domain_angle_offset, 12)
+    #domain_angle_offset = np.asarray([10, 98, 165.5, 173]) 
+    domain_angle_offset = np.arange(3, 50, 1)
+    domain_angle_offset= np.append(domain_angle_offset, np.arange(160, 180, 1))
+    domain_angle_offset= np.append(domain_angle_offset, [98, 99, 100, 130])
+
     domain_angle_offset = np.sort(domain_angle_offset)
     print('domain_angle_offset = {}'.format(domain_angle_offset))
           
@@ -401,8 +402,8 @@ if 7 in run_steps:
         list_peaks_angles['angle'] = angles_new
     
         ## Get sino
-        flag_normal = 1 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
-        width = 2
+        flag_normal = 3 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
+        width = 1
         sino_dm = tomo.get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
         ## Plot sino
         title_st = '{}\nflag_normal={}'.format(filename, flag_normal) if ii==0 else ''
@@ -412,7 +413,7 @@ if 7 in run_steps:
         
         ## Tomo recon
         plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
-        title_st = '[{}] ori={}$^\circ$'.format(ii,offset)
+        title_st = '{}$^\circ$'.format(offset)
         temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=28, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
         sino_all_list.append(sino_dm)
         recon_all_list.append(np.squeeze(temp['_fbp']))
@@ -509,7 +510,9 @@ if 10 in run_steps:
     
     for ii in domains_use:      
         recon = recon_all_list[ii]
-        recon_all_list_normal.append(recon/np.max(recon))
+        recon_thr = recon.copy()
+        recon_thr[recon<np.max(recon)*0.15]=0
+        recon_all_list_normal.append(recon_thr/np.max(1))
         
     mask = (recon!=0).astype(float)
     mask_nan = mask.copy()
@@ -533,9 +536,13 @@ if 10 in run_steps:
     else:
         x = 1
     
-    plt.imshow(domains_recon*x, cmap='summer', alpha = 0.9)
-    plt.colorbar()
-    plt.title('orientation angles {}'.format(temp_angle))
+    plt.imshow(domains_recon*x, cmap='twilight', alpha = 0.9)
+    cbar = plt.colorbar(fraction=0.05, pad=0.0, aspect=25) 
+    #plt.title('orientation angles {}'.format(temp_angle))
+    plt.axis('off')
+    plt.plot([5, 10], [45, 45], linewidth=4, color='w')
+    plt.text(4.8, 43.7, '1mm', color='w', fontweight='bold', fontsize=10)
+    
     
     ## Save 
     if flag_save_png:    
