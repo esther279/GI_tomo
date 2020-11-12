@@ -309,11 +309,8 @@ def get_proj_from_sino(sino,  idx, width, flag_normal=1):
 # =============================================================================
 # Plot angles on polar coordinate
 # =============================================================================
-<<<<<<< HEAD
-def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=12):
-=======
-def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=20, theory=0):
->>>>>>> 3980ae28aba73bcead9a1d8a649ec8ef3f55d629
+
+def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=15, theory=0):
     angles_deg = np.asarray(angles_deg)
     angles_rad = np.asarray(angles_deg)/180*np.pi
     
@@ -322,45 +319,6 @@ def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=20, theory=0):
     
     plt.figure(fignum); plt.clf()
     ax = plt.subplot(111, projection='polar')
-<<<<<<< HEAD
-    ax.bar(angles_rad, ones*0.85, width=ones*0.01, color=color, alpha=0.8)
-    ax.set_rticks([]) 
-    ax.set_xticklabels([])
-    
-    green = [0, 0, 0.9] # [0, 0.6, 0]; 
-    FW1='normal'; FW='bold'
-    if 'sum' in labels[0]: 
-        s = 3
-    else: s=0
-    
-    for ii, angle in enumerate(angles_rad):
-        try:
-            label = labels[ii].any()
-        except:
-            label = labels[ii]
-                
-        if 'Si' in label:
-            ax.bar(angle, ones, width=ones*0.01, color='k', alpha=0.6)
-            ax.text(angle, 1.17, str(angles_deg[ii]), color='k', fontsize=FS, fontweight=FW1, ha='center', va='center')
-        elif '0' in label: #and label[-1]=='0':
-            ax.bar(angle, ones*0.85, width=ones*0.01, color=green, alpha=0.8)
-            ax.text(angle, 0.95, str(angles_deg[ii]), color=green, fontsize=FS,fontweight=FW1, ha='center', va='center')
-        else:
-            ax.text(angle, 0.9, str(angles_deg[ii]), color=color, fontsize=FS, fontweight=FW1, ha='center',va='center')
-
-            
-        if len(labels)>0:
-            if 'Si' in label:
-                ax.text(angle, 1.3, label[s:], color='k', fontsize=FS, fontweight=FW, ha='center',va='center')
-            elif '0' in label: # and label[-1]=='0':
-                ax.text(angle, 1.15, label[s:], color=green, fontsize=FS, fontweight=FW, ha='center',va='center')
-            else:
-                ax.text(angle, 1.05, label[s:], color=color,fontsize=FS, fontweight=FW, ha='center', va='center')
-
-            
-    plt.show()
-
-=======
     ax.bar(angles_rad, ones*0.8, width=ones*0.01, color=color, alpha=0.8)
     ax.set_rticks([]) 
     ax.set_xticklabels([])
@@ -407,8 +365,6 @@ def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=20, theory=0):
             
     plt.show()
 
-    
->>>>>>> 3980ae28aba73bcead9a1d8a649ec8ef3f55d629
 # =============================================================================
 #  Find and label peaks   
 #  onedomain = 1 to (attempt to) find peaks corresponding to the same domain
