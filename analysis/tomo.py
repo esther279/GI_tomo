@@ -43,7 +43,14 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, thr=None, binary=No
             #print(proj[bkg_max_idx])
             print('NOTE: flag_rm_expbg=1, this substracts the normalized sumBKG0 (normalized to the projection value at which the sumBKG0 is max) from the projection')
             proj = proj - proj_bkg*proj[bkg_max_idx]         
-            proj[proj<1] = 1 
+            #proj[proj<1] = 1
+
+        print('# Checking sino & Fill empty data frame')
+        proj[proj<5] = 0
+        for xx in np.arange(1, proj.shape[1]-1):
+            #print('{}'.format(np.mean(proj)*0.05))
+            if np.mean(proj[:,xx])<np.mean(proj)*0.05:
+                proj[:,xx] = (proj[:,xx-1] + proj[:, xx+1])/2
         #proj = proj[:,:,6:]
         #proj = pow(proj,1.2)    
         
@@ -303,7 +310,7 @@ def get_proj_from_sino(sino,  idx, width, flag_normal=1):
 # =============================================================================
 # Plot angles on polar coordinate
 # =============================================================================
-def plot_angles(angles_deg, fignum=100, color='r', labels=[]):
+def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=12):
     angles_deg = np.asarray(angles_deg)
     angles_rad = np.asarray(angles_deg)/180*np.pi
     
@@ -312,44 +319,43 @@ def plot_angles(angles_deg, fignum=100, color='r', labels=[]):
     
     plt.figure(fignum); plt.clf()
     ax = plt.subplot(111, projection='polar')
-        ax.bar(angles_rad, ones*0.85, width=ones*0.01, color=color, alpha=0.8)
-        ax.set_rticks([]) 
-        ax.set_xticklabels([])
-        
-        green = [0, 0, 0.9] # [0, 0.6, 0]; 
-        FS=12; FW1='normal'; FW='bold'
-        if 'sum' in labels[0]: 
-            s = 3
-        else: s=0
-        
-        for ii, angle in enumerate(angles_rad):
-            try:
-                label = labels[ii].any()
-            except:
-                label = labels[ii]
-                    
-            if 'Si' in label:
-                ax.text(angle, 1.17, str(angles_deg[ii]), color='k', fontsize=FS, fontweight=FW1, ha='center', va='center')
-            elif '0' in label and label[-1]=='0':
-                ax.text(angle, 0.95, str(angles_deg[ii]), color=green, fontsize=FS,fontweight=FW1, ha='center', va='center')
-            else:
-                ax.text(angle, 0.9, str(angles_deg[ii]), color=color, fontsize=FS, fontweight=FW1, ha='center',va='center')
-                
-            if len(labels)>0:
-                if 'Si' in label:
-                    ax.text(angle, 1.3, label[s:], color='k', fontsize=FS, fontweight=FW, ha='center',va='center')
-                elif '0' in label and label[-1]=='0':
-                    ax.text(angle, 1.15, label[s:], color=green, fontsize=FS, fontweight=FW, ha='center',va='center')
-                else:
-                    ax.text(angle, 1.05, label[s:], color=color,fontsize=FS, fontweight=FW, ha='center', va='center')
-                
-            if 'Si' in label:
-                ax.bar(angle, ones, width=ones*0.01, color='k', alpha=0.6)
-            elif '0' in label  and label[-1]=='0':
-                ax.bar(angle, ones*0.85, width=ones*0.01, color=green, alpha=0.8)
-                
-        plt.show()
+    ax.bar(angles_rad, ones*0.85, width=ones*0.01, color=color, alpha=0.8)
+    ax.set_rticks([]) 
+    ax.set_xticklabels([])
     
+    green = [0, 0, 0.9] # [0, 0.6, 0]; 
+    FW1='normal'; FW='bold'
+    if 'sum' in labels[0]: 
+        s = 3
+    else: s=0
+    
+    for ii, angle in enumerate(angles_rad):
+        try:
+            label = labels[ii].any()
+        except:
+            label = labels[ii]
+                
+        if 'Si' in label:
+            ax.bar(angle, ones, width=ones*0.01, color='k', alpha=0.6)
+            ax.text(angle, 1.17, str(angles_deg[ii]), color='k', fontsize=FS, fontweight=FW1, ha='center', va='center')
+        elif '0' in label: #and label[-1]=='0':
+            ax.bar(angle, ones*0.85, width=ones*0.01, color=green, alpha=0.8)
+            ax.text(angle, 0.95, str(angles_deg[ii]), color=green, fontsize=FS,fontweight=FW1, ha='center', va='center')
+        else:
+            ax.text(angle, 0.9, str(angles_deg[ii]), color=color, fontsize=FS, fontweight=FW1, ha='center',va='center')
+
+            
+        if len(labels)>0:
+            if 'Si' in label:
+                ax.text(angle, 1.3, label[s:], color='k', fontsize=FS, fontweight=FW, ha='center',va='center')
+            elif '0' in label: # and label[-1]=='0':
+                ax.text(angle, 1.15, label[s:], color=green, fontsize=FS, fontweight=FW, ha='center',va='center')
+            else:
+                ax.text(angle, 1.05, label[s:], color=color,fontsize=FS, fontweight=FW, ha='center', va='center')
+
+            
+    plt.show()
+
 # =============================================================================
 #  Find and label peaks   
 #  onedomain = 1 to (attempt to) find peaks corresponding to the same domain
