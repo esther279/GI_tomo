@@ -43,7 +43,10 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, thr=None, binary=No
             #print(proj[bkg_max_idx])
             print('NOTE: flag_rm_expbg=1, this substracts the normalized sumBKG0 (normalized to the projection value at which the sumBKG0 is max) from the projection')
             proj = proj - proj_bkg*proj[bkg_max_idx]         
-            proj[proj<1] = 1 
+            proj[proj<1] = 0
+            for xx in np.arange(0, proj.shape[1]):
+                if np.sum(proj[xx])==0:
+                    proj[xx] = (proj[xx-1] + proj[xx+1])/2
         #proj = proj[:,:,6:]
         #proj = pow(proj,1.2)    
         
