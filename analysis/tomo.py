@@ -240,12 +240,15 @@ def get_combined_sino(sino_dict, list_peaks_angles, width=0, flag_normal=1, verb
     if verbose>0: print('------')
     sino_dm = np.zeros([sino_allpeaks.shape[0], sino_allpeaks.shape[1]])
     for ii in np.arange(0,len(list_peaks_angles)):
-        sino, _, _ = get_sino_from_a_peak(sino_dict, peaks[ii])  # get the sino for this peak (eg 'sum11L')
+        sino, _, _ = get_sino_from_a_peak(sino_dict, peaks[ii])  
         idx = get_index_for_peak(sino_dict, peaks[ii])
         angle = angles[ii]
-        if verbose>0: print('angle = {}, peak = {}, area {}'.format(angle, peaks[ii], areas[idx]))        
-        angle_idx = get_idx_angle(theta, theta=angle)
+        if verbose>0: print('angle = {}, peak = {}, area {}'.format(np.mod(angle, 180), peaks[ii], areas[idx]))        
+        angle_idx = get_idx_angle(theta, theta=np.mod(angle, 180))
         temp = get_proj_from_sino(sino,  angle_idx, width, flag_normal=flag_normal)  # get the projection at the angle
+        if angle>180 or angle<0:
+            print(angle)
+            temp = np.flip(temp)
         
         ## Normalize 
         if flag_normal==2:
@@ -294,9 +297,13 @@ def get_idx_angle(theta_array, theta=0):
 # =============================================================================
 def get_proj_from_sino(sino,  idx, width, flag_normal=1):
     line = np.zeros([1, sino.shape[1]])
+    
+    w = 0
     for ii in np.arange(idx-width, idx+width+1):
-        line = line + sino[ii,:]
-    line = line / (width*2+1)   
+        if ii > 0 and ii < sino.shape[0]:
+            line = line + sino[ii,:]
+            w = w+1
+    line = line / w   
     
     ## Normalize
     if flag_normal>=1:
