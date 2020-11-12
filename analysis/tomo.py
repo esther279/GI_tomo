@@ -43,7 +43,7 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, thr=None, binary=No
             #print(proj[bkg_max_idx])
             print('NOTE: flag_rm_expbg=1, this substracts the normalized sumBKG0 (normalized to the projection value at which the sumBKG0 is max) from the projection')
             proj = proj - proj_bkg*proj[bkg_max_idx]         
-            #proj[proj<1] = 1
+
 
         print('# Checking sino & Fill empty data frame')
         proj[proj<5] = 0
@@ -51,8 +51,7 @@ def get_sino_from_data(data, list_peaks=[], flag_rm_expbg=1, thr=None, binary=No
             #print('{}'.format(np.mean(proj)*0.05))
             if np.mean(proj[:,xx])<np.mean(proj)*0.05:
                 proj[:,xx] = (proj[:,xx-1] + proj[:, xx+1])/2
-        #proj = proj[:,:,6:]
-        #proj = pow(proj,1.2)    
+   
         
         if thr is not None:
             print('NOTE: proj[proj<np.median(proj)*thr] = 1')
@@ -310,15 +309,20 @@ def get_proj_from_sino(sino,  idx, width, flag_normal=1):
 # =============================================================================
 # Plot angles on polar coordinate
 # =============================================================================
+<<<<<<< HEAD
 def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=12):
+=======
+def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=20, theory=0):
+>>>>>>> 3980ae28aba73bcead9a1d8a649ec8ef3f55d629
     angles_deg = np.asarray(angles_deg)
     angles_rad = np.asarray(angles_deg)/180*np.pi
     
-    angles_deg = [round(xx,2) for xx in angles_deg]
+    angles_deg = [round(xx,1) for xx in angles_deg] # Round up
     ones = np.ones(len(angles_deg))
     
     plt.figure(fignum); plt.clf()
     ax = plt.subplot(111, projection='polar')
+<<<<<<< HEAD
     ax.bar(angles_rad, ones*0.85, width=ones*0.01, color=color, alpha=0.8)
     ax.set_rticks([]) 
     ax.set_xticklabels([])
@@ -356,6 +360,55 @@ def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=12):
             
     plt.show()
 
+=======
+    ax.bar(angles_rad, ones*0.8, width=ones*0.01, color=color, alpha=0.8)
+    ax.set_rticks([]) 
+    ax.set_xticklabels([])
+    
+    green = [0, 0.6, 0] # [0, 0.6, 0]; 
+    if theory==1:
+        green = [0, 0, 0.9]
+
+    FW1='normal'; FW='bold'
+    if type(labels) is not list:
+        labels = labels.values.tolist()
+        
+    if 'sum' in labels[0]: 
+        s = 3
+    else: s = 0
+    
+    for ii, angle in enumerate(angles_rad):
+        label = labels[ii]
+               
+        ## Label angles
+        if 'Si' in label:
+            ax.bar(angle, ones, width=ones*0.01, color='k', alpha=0.6)
+            tt = ax.text(angle, 1.24, str(angles_deg[ii]), color='k', fontsize=FS-5, fontweight=FW1, ha='center', va='center')
+        elif '0' in label and label[-1]=='0':
+                ax.bar(angle, ones*0.8, width=ones*0.01, color=green, alpha=0.8)
+                tt = ax.text(angle, 0.94, str(angles_deg[ii]), color=green, fontsize=FS-2,fontweight=FW1, ha='center', va='center')
+        else:
+            tt = ax.text(angle, 0.94, str(angles_deg[ii]), color=color, fontsize=FS-2, fontweight=FW1, ha='center',va='center')
+            
+        if np.cos(angle)<=0.01: rotate=angle+np.pi
+        else: rotate = angle
+        tt.set_rotation(rotate/np.pi*180)
+        
+        ## Label peak
+        if len(labels)>0:
+            if 'Si' in label:
+                tt2 = ax.text(angle, 1.34, label[s:], color='k', fontsize=FS-5, fontweight=FW, ha='center',va='center')
+            elif '0' in label and label[-1]=='0':
+                tt2 = ax.text(angle, 1.23-theory*0.05, label[s:], color=green, fontsize=FS, fontweight=FW, ha='center',va='center')
+            else:
+                tt2 = ax.text(angle, 1.2, label[s:], color=color,fontsize=FS, fontweight=FW, ha='center', va='center')
+
+        #tt2.set_rotation(rotate/np.pi*180)
+            
+    plt.show()
+
+    
+>>>>>>> 3980ae28aba73bcead9a1d8a649ec8ef3f55d629
 # =============================================================================
 #  Find and label peaks   
 #  onedomain = 1 to (attempt to) find peaks corresponding to the same domain
