@@ -123,7 +123,9 @@ if 1 in run_steps:
             plt.clim(0, 20)
             plt.colorbar()
             plt.show()
-
+else:
+    fn_out = out_dir+'data_avg'
+    data_avg = np.load(fn_out+'.npy')
 
 ####### Get peak roi from scattering pattern
 peak_list = io.read_peak_list(filename_peak)
@@ -311,8 +313,8 @@ if 5 in run_steps:
 # =============================================================================
 if 6 in run_steps: 
     plt.figure(25, figsize=[20, 10]); plt.clf()
-    peak_strong = 'sum11L'
-    sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, 'sum11L') #choose
+    peak_strong = 'sum02L'
+    sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, peak_strong) 
     plt.subplot(1,2,1)
     plt.imshow(sino); plt.axis('auto'); plt.ylabel('rotational angle in deg')
     plt.subplot(1,2,2)
@@ -452,7 +454,7 @@ if 9 in run_steps:
 # Generate a guess 
 # =============================================================================
 if 10 in run_steps:
-    domains_use = [1, 3, 4, 6, 7, 8]  #np.arange(0, len(recon_all_list))
+    domains_use = np.arange(0, len(recon_all_list))
     recon_all_list_normal = []
     
     for ii in domains_use:      
@@ -469,10 +471,7 @@ if 10 in run_steps:
     ##------ Load mask
     plt.figure(45); plt.clf()
     if 1:
-        x = np.asarray(Image.open("./GI_tomo/img/tomo2_mask_50.png").convert("L").rotate(0).resize((48,48)))
-        x = np.pad(x, [(0, 2), (0, 2)], mode='constant', constant_values=0)
-        x = np.roll(x, 3, axis=0)
-        x = np.roll(x, 0, axis=1)
+        x = np.asarray(Image.open("./mask_S2.png").convert("L").resize((50,50)))
         plt.imshow(x, alpha = 1, cmap='gray')
         x = x.astype('float')
         x[x<3] = 0
@@ -481,9 +480,8 @@ if 10 in run_steps:
     else:
         x = 1
     
-    plt.imshow(domains_recon*x, cmap='summer', alpha = 0.9)
-    plt.colorbar()
-    plt.title('orientation angles {}'.format(temp_angle))
+    plt.imshow(domains_recon*x, cmap='twilight', alpha = 0.9)
+    cbar = plt.colorbar(fraction=0.05, pad=0.0, aspect=25) 
     
     ## Save 
     if flag_save_png:    

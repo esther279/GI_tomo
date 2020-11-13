@@ -42,7 +42,7 @@ if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 # 7) For each domain, generate sinogram and recon
 # 8-10) Post-processing/Visualization
 
-run_steps = [2,4,5] 
+run_steps = [10] 
 flag_LinearSubBKG = 1
 flag_load_peaks = 1 
 flag_save_png = 0
@@ -262,19 +262,8 @@ if 5 in run_steps:
         peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=1)
         
         ## Store peaks and corresponding angles to a df for reconstructing ONE domain
-        ''' Example
-        x = {}; jj=0
-        #sum20L
-        x[jj] = pd.DataFrame([[28.5, 'sum20L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[209, 'sum20L']], columns=['angle','peak']); jj = jj+1
-        #sum21L
-        x[jj] = pd.DataFrame([[51, 'sum21L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[190, 'sum21L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[231, 'sum21L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[10, 'sum21L']], columns=['angle','peak']); jj = jj+1
-        '''
         for angle in theta[peaks_idx]:
-            if 1: #angle<181: #why
+            if angle<348: #angle<181: #why
                 x[jj] = pd.DataFrame([[angle, peak]], columns=['angle','peak'])
                 jj = jj+1
                 plt.plot([angle, angle], [0, np.max(sum_sino)*1.1], 'r', linewidth=5, alpha=0.3)
@@ -310,7 +299,7 @@ if 5 in run_steps:
     #list_peaks_angles_orig = list_peaks_angles_orig.drop([29]) 
     print(list_peaks_angles_orig)
     tomo.plot_angles(list_peaks_angles_orig['angle'], fignum=21, labels=list_peaks_angles_orig['peak'])    
-    tomo.plot_angles(temp_list['angle'], fignum=23, labels=temp_list['peak'], FS=23)  
+    #tomo.plot_angles(temp_list['angle'], fignum=23, labels=temp_list['peak'], FS=23)  
     
     if flag_save_png:
         fn_out = out_dir+'fig21_angles' #+peak
@@ -327,8 +316,8 @@ if 5 in run_steps:
 # =============================================================================
 if 6 in run_steps: 
     plt.figure(25, figsize=[20, 10]); plt.clf()
-    peak_strong = 'sum11L'
-    sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, 'sum11L') #choose
+    peak_strong = 'sum02L'
+    sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, peak_strong) #choose
     plt.subplot(1,2,1)
     plt.imshow(sino); plt.axis('auto'); plt.ylabel('rotational angle in deg')
     plt.subplot(1,2,2)
@@ -344,11 +333,10 @@ if 6 in run_steps:
 
     ####### Specify domains
     print('## Select the main peaks for reconstruction of different domains. See above for recommendations.')
-    #domain_angle_offset = np.asarray([197.5, 201.0, 205.0, 209.0, 215.0, 221.0, 233.0]) - 209.0
-    domain_angle_offset = np.asarray([154.0, 157.5, 160.5, 161.5, 165.5, 170.5, 171.5, 188.5, 189.5,]) - 165.5
-    domain_angle_offset = np.append(domain_angle_offset, 12)
-    #domain_angle_offset = np.append(domain_angle_offset, np.arange(-2,2.5,0.5))
-    #domain_angle_offset = np.asarray([21, 51, 65, 172]) #, 192, 246, 280, 303, 352]) 
+    #domain_angle_offset = np.asarray([154.0, 157.5, 160.5, 161.5, 165.5, 170.5, 171.5, 188.5, 189.5,]) - 165.5
+    #domain_angle_offset = np.append(domain_angle_offset, 12)
+    domain_angle_offset = np.arange(85, 138, 0.5)
+    #domain_angle_offset= np.append(domain_angle_offset, [1, 179])
     domain_angle_offset = np.sort(domain_angle_offset)
     print('domain_angle_offset = {}'.format(domain_angle_offset))
           
@@ -360,14 +348,14 @@ if 7 in run_steps:
     plt.figure(30, figsize=[20, 10]); plt.clf()
     for ii, offset in enumerate(domain_angle_offset):  
         print('offset = {}'.format(offset))
-        angles_old = list_peaks_angles_orig['angle'] #- 97 + 79
+        angles_old = list_peaks_angles_orig['angle'] -112
         angles_new = angles_old + offset
         list_peaks_angles['angle'] = angles_new
     
         ## Get sino
-        flag_normal = 1 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
-        width = 2
-        sino_dm = tomo.get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
+        flag_normal = 3 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
+        width = 1
+        sino_dm = tomo.get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), phi_max=360, width=width, flag_normal=flag_normal, verbose=1)
         ## Plot sino
         title_st = '{}\nflag_normal={}'.format(filename, flag_normal) if ii==0 else ''
         plt.subplot(2,len(domain_angle_offset),ii+1)
@@ -468,12 +456,14 @@ if 9 in run_steps:
 # Generate a guess 
 # =============================================================================
 if 10 in run_steps:
-    domains_use = [1, 3, 4, 6, 7, 8]  #np.arange(0, len(recon_all_list))
+    domains_use = np.arange(0, len(recon_all_list))
     recon_all_list_normal = []
     
     for ii in domains_use:      
         recon = recon_all_list[ii]
-        recon_all_list_normal.append(recon/np.max(recon))
+        recon_thr = recon.copy()
+        recon_thr[recon<np.max(recon)*0.1]=0
+        recon_all_list_normal.append(recon_thr/np.max(1))
         
     mask = (recon!=0).astype(float)
     mask_nan = mask.copy()
@@ -485,10 +475,7 @@ if 10 in run_steps:
     ##------ Load mask
     plt.figure(45); plt.clf()
     if 1:
-        x = np.asarray(Image.open("./GI_tomo/img/tomo2_mask_50.png").convert("L").rotate(-2).resize((48,48)))
-        x = np.pad(x, [(0, 2), (0, 2)], mode='constant', constant_values=0)
-        x = np.roll(x, 3, axis=0)
-        x = np.roll(x, 0, axis=1)
+        x = np.asarray(Image.open("./mask_S2b.png").convert("L").resize((50,50)))
         plt.imshow(x, alpha = 1, cmap='gray')
         x = x.astype('float')
         x[x<3] = 0
@@ -497,9 +484,12 @@ if 10 in run_steps:
     else:
         x = 1
     
-    plt.imshow(domains_recon*x, cmap='summer', alpha = 0.9)
-    plt.colorbar()
-    plt.title('orientation angles {}'.format(temp_angle))
+    plt.imshow(domains_recon*x, cmap='twilight', alpha = 0.9, vmin=0, vmax=180)
+    cbar = plt.colorbar(fraction=0.05, pad=0.0, aspect=25) 
+    plt.axis('off')
+    plt.plot([5, 10], [45, 45], linewidth=4, color='w')
+    plt.text(4.8, 43.7, '1mm', color='w', fontweight='bold', fontsize=10)
+    
     
     ## Save 
     if flag_save_png:    

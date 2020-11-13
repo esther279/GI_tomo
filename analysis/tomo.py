@@ -229,7 +229,7 @@ def get_plot_recon(sino_data, theta = [], rot_center=0, algorithms = ['art', 'gr
 # =============================================================================
 # Combine data from different peaks into one sino for a domain
 # =============================================================================
-def get_combined_sino(sino_dict, list_peaks_angles, width=0, flag_normal=1, verbose=0):
+def get_combined_sino(sino_dict, list_peaks_angles, phi_max=360, width=0, flag_normal=1, verbose=0):
     sino_allpeaks = sino_dict['sino_allpeaks']
     theta = sino_dict['theta']
     areas = sino_dict['areas']
@@ -243,12 +243,12 @@ def get_combined_sino(sino_dict, list_peaks_angles, width=0, flag_normal=1, verb
         sino, _, _ = get_sino_from_a_peak(sino_dict, peaks[ii])  
         idx = get_index_for_peak(sino_dict, peaks[ii])
         angle = angles[ii]
-        if verbose>0: print('angle = {}, peak = {}, area {}'.format(np.mod(angle, 180), peaks[ii], areas[idx]))        
-        angle_idx = get_idx_angle(theta, theta=np.mod(angle, 180))
+        if verbose>0: print('angle = {}, peak = {}, area {}'.format(np.mod(angle, phi_max), peaks[ii], areas[idx]))        
+        angle_idx = get_idx_angle(theta, theta=np.mod(angle, phi_max))
         temp = get_proj_from_sino(sino,  angle_idx, width, flag_normal=flag_normal)  # get the projection at the angle
-        if angle>180 or angle<0:
-            print(angle)
-            temp = np.flip(temp)
+        if phi_max==180:
+            if angle>phi_max or angle<0:
+                temp = np.flip(temp)
         
         ## Normalize 
         if flag_normal==2:
