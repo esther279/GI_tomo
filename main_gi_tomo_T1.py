@@ -40,7 +40,8 @@ if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 # 7) For each domain, generate sinogram and recon
 # 8-10) Post-processing/Visualization
 
-run_steps = [10] 
+run_steps = [6,7,10] 
+verbose = 0
 flag_LinearSubBKG = 0
 flag_load_peaks = 0 
 flag_save_png = 0
@@ -204,7 +205,7 @@ if 4 in run_steps:
     sino_dict['areas'] = peaks.calc_area_peakROI(peak_list) # Assuming list_peaks are the same as peak_list
 
     ## Plot sino
-    tomo.plot_sino(sino_dict, fignum=10, title_st=filename, vlog10=[0, 5.5])
+    tomo.plot_sino(sino_dict, fignum=10, title_st=filename, vlog10=[2.5, 6])
     if flag_save_png:
         fn_out = out_dir+'fig10_'+filename+'peaks_sino' 
         fn_out = util.check_file_exist(fn_out)
@@ -236,33 +237,69 @@ if 5 in run_steps:
     
     x = {}; jj=0
     N = len(list_peaks[0:-1])
-    plt.figure(20, figsize=[15, 8]); plt.clf()
+    if verbose>1: 
+        plt.figure(20, figsize=[15, 8]); plt.clf()
     for ii, peak in enumerate(list_peaks[0:-1]):
-    #peak =  'sum20L'
-    #if 1:
         sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, peak) # which peak roi
         if flag_log10: 
             sum_sino = np.log10(sum_sino)    
-        plt.subplot(N,1,ii+1)
-        plt.plot(theta, sum_sino, color='k');  
-        plt.axis('off')     
-        if 'b' in peak: color = [0, 0.5, 0] 
-        else: color = 'b'
-        plt.text(-23, np.max(sum_sino)*0.7, peak, fontsize=8, color=color)
-        if ii==0: plt.title(HOME_PATH+', '+filename)
-        
-        peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=1)
+        if verbose>1:
+            plt.subplot(N,1,ii+1)
+            plt.plot(theta, sum_sino, color='k');  
+            plt.axis('off')     
+            if 'b' in peak: color = [0, 0.5, 0] 
+            else: color = 'b'
+            plt.text(-23, np.max(sum_sino)*0.7, peak, fontsize=8, color=color)
+            if ii==0: plt.title(HOME_PATH+', '+filename)
+            
+            peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=1)
         
         ## Store peaks and corresponding angles to a df for reconstructing ONE domain
         jj=0
         x[jj] = pd.DataFrame([[-53.87, 'sum11L']], columns=['angle','peak']); jj = jj+1
         x[jj] = pd.DataFrame([[-53.87+107.75, 'sum11L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[-53.87-12.8, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+        x[jj] = pd.DataFrame([[-53.87+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
+        x[jj] = pd.DataFrame([[-53.87+107.75+180, 'sum11L']], columns=['angle','peak']); jj = jj+1
+        
+        x[jj] = pd.DataFrame([[-53.87-12.8, 'sum11Lb']], columns=['angle','peak']); jj = jj+1        
         x[jj] = pd.DataFrame([[-53.87-12.8+107.75, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+        x[jj] = pd.DataFrame([[-53.87-12.8+180, 'sum11Lb']], columns=['angle','peak']); jj = jj+1        
+        x[jj] = pd.DataFrame([[-53.87-12.8+107.75+180, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+
+        
         x[jj] = pd.DataFrame([[0, 'sum02L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[-53.87+19.5, 'sum12L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[-53.87+19.5+68.8, 'sum12L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[-53.87-29, 'sum20L']], columns=['angle','peak']); jj = jj+1
+        x[jj] = pd.DataFrame([[180, 'sum02L']], columns=['angle','peak']); jj = jj+1
+        x[jj] = pd.DataFrame([[0-13.35, 'sum02Lb']], columns=['angle','peak']); jj = jj+1
+        x[jj] = pd.DataFrame([[180-13.35, 'sum02Lb']], columns=['angle','peak']); jj = jj+1                
+        
+        offset = 21
+        x[jj] = pd.DataFrame([[-53.87+offset, 'sum12L']], columns=['angle','peak']); jj = jj+1     
+        x[jj] = pd.DataFrame([[-53.87+offset+68.8, 'sum12L']], columns=['angle','peak']); jj = jj+1
+        x[jj] = pd.DataFrame([[-53.87+offset+180, 'sum12L']], columns=['angle','peak']); jj = jj+1     
+        x[jj] = pd.DataFrame([[-53.87+offset+68.8+180, 'sum12L']], columns=['angle','peak']); jj = jj+1
+        
+        alpha2 = -16.31
+        x[jj] = pd.DataFrame([[-53.87+offset+alpha2, 'sum12Lb']], columns=['angle','peak']); jj = jj+1     
+        x[jj] = pd.DataFrame([[-53.87+offset+68.8+alpha2, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
+        x[jj] = pd.DataFrame([[-53.87+offset+180+alpha2, 'sum12Lb']], columns=['angle','peak']); jj = jj+1     
+        x[jj] = pd.DataFrame([[-53.87+19.5+68.8+180+alpha2, 'sum12Lb']], columns=['angle','peak']); jj = jj+1
+        
+        x[jj] = pd.DataFrame([[-53.87-29, 'sum20L']], columns=['angle','peak']); jj = jj+1        
+        x[jj] = pd.DataFrame([[-53.87-29+180, 'sum20L']], columns=['angle','peak']); jj = jj+1
+        alpha2 = -27.5
+        x[jj] = pd.DataFrame([[-53.87-29+alpha2, 'sum20Lb']], columns=['angle','peak']); jj = jj+1        
+        x[jj] = pd.DataFrame([[-53.87-29+180+alpha2, 'sum20Lb']], columns=['angle','peak']); jj = jj+1
+        
+        x[jj] = pd.DataFrame([[-53.87-7.5, 'sum21L']], columns=['angle','peak']); jj = jj+1        
+        x[jj] = pd.DataFrame([[-53.87-7.5+139, 'sum21L']], columns=['angle','peak']); jj = jj+1
+        x[jj] = pd.DataFrame([[-53.87-7.5+180, 'sum21L']], columns=['angle','peak']); jj = jj+1        
+        x[jj] = pd.DataFrame([[-53.87-7.5+139+180, 'sum21L']], columns=['angle','peak']); jj = jj+1
+ 
+        alpha2 = -30.5
+        x[jj] = pd.DataFrame([[-53.87-7.5+alpha2, 'sum21Lb']], columns=['angle','peak']); jj = jj+1        
+        x[jj] = pd.DataFrame([[-53.87-7.5+139+alpha2, 'sum21Lb']], columns=['angle','peak']); jj = jj+1
+        x[jj] = pd.DataFrame([[-53.87-7.5+180+alpha2, 'sum21Lb']], columns=['angle','peak']); jj = jj+1        
+        x[jj] = pd.DataFrame([[-53.87-7.5+139+180+alpha2, 'sum21Lb']], columns=['angle','peak']); jj = jj+1       
         
     #--- Save to npy
     if flag_save_npy:
@@ -283,18 +320,17 @@ if 5 in run_steps:
     print(temp_list) #print(list_peaks_angles_orig.sort_values('angle'))
     
     ## Remove peaks not needed for sino
-    if 0:
+    if 1:
         list_peaks_angles_orig = temp_list[temp_list.peak !='sumSi']
     else:
-        temp = np.load('/home/etsai/BNL/Research/GIWAXS_tomo_2019C3/RLi/waxs/results_tomo/list_peaks_angles_orig.npy', allow_pickle=True)
+        temp = np.load('list_peaks_angles_orig.npy', allow_pickle=True)
         list_peaks_angles_orig=pd.DataFrame(temp,columns=['angle','peak'])
         
     print('## Compare the list with the figure and drop unwanted peaks.')
     list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSib']
-    #list_peaks_angles_orig = list_peaks_angles_orig.drop([24])   #list_peaks_angles_orig.copy()
-    #list_peaks_angles_orig = list_peaks_angles_orig.drop([29]) 
+
     print(list_peaks_angles_orig)
-    tomo.plot_angles(list_peaks_angles_orig['angle'], fignum=21)    
+    tomo.plot_angles(list_peaks_angles_orig['angle'],labels=list_peaks_angles_orig['peak'], color='b', FS=12, fignum=21)    
     
     if flag_save_png:
         fn_out = out_dir+'fig21_angles' #+peak
@@ -328,11 +364,15 @@ if 6 in run_steps:
 
     ####### Specify domains
     print('## Select the main peaks for reconstruction of different domains. See above for recommendations.')
-    #domain_angle_offset = np.append(domain_angle_offset, np.arange(-2,2.5,0.5))
+    #domain_angle_offset = np.arange(12,179,0.5)
     #domain_angle_offset = np.asarray([17, 31, 90, 104, 110, 129, 160, 174])
-    domain_angle_offset = np.arange(85,95,1)
-    domain_angle_offset = np.append(domain_angle_offset, np.arange(165,175,1))
-    domain_angle_offset = np.append(domain_angle_offset, np.arange(100,112,1))
+    #domain_angle_offset = np.asarray([31, 90, 104, 110, 160, 174])
+    #domain_angle_offset = np.arange(85,95,1)
+    #domain_angle_offset = np.append(domain_angle_offset, np.arange(165,175,1))
+    #domain_angle_offset = np.append(domain_angle_offset, np.arange(100,112,1))
+    temp = theta[sum_sino>100e3]
+    domain_angle_offset = temp[temp<180]
+    
     domain_angle_offset = np.sort(domain_angle_offset)
     print('domain_angle_offset = {}'.format(domain_angle_offset))
           
@@ -374,19 +414,18 @@ if 7 in run_steps:
 # Overlap three domains spatially
 # =============================================================================
 if 8 in run_steps:     
-    domains_use = [0, 1, 2]   #overlay these domains
+    angles = [31.5, 128, 116]
     rgb = 'RGBWCMY'
     channel=0; overlay = []
     
-    plt.figure(35, figsize=[20,10]); plt.clf()
-    for ii in domains_use:      
+    plt.figure(35, figsize=[10,8]); plt.clf()
+    for angle in angles:     
+        ii = np.argmin(np.abs(domain_angle_offset-angle))
         recon = recon_all_list[ii]
+        recon_plot = recon/np.max(recon)
         
         if 1: ## Threshold
-            if ii==4:
-                thr = 0.55
-            else:
-                thr = 0.55
+            thr = 0.5
             recon_plot = seg.do_thr(recon, thr)
             
         else: ## Segmentation
@@ -458,7 +497,7 @@ if 10 in run_steps:
     for ii in domains_use:      
         recon = recon_all_list[ii]
         recon_thr = recon.copy()
-        recon_thr[recon<np.max(recon)*0.15]=0
+        recon_thr[recon<np.max(recon)*0.2]=0
         recon_all_list_normal.append(recon_thr/np.max(1))
         
     mask = (recon!=0).astype(float)
@@ -504,8 +543,33 @@ if 10 in run_steps:
         np.save(fn_out, rot_angles)
 
 
-
-
+if 11 in run_steps:
+    angles = [31.5, 128]
+    rgb = 'RGBWCMY'
+    channel=0; overlay = []
+    
+    plt.figure(50); plt.clf()
+    for angle in angles:
+        domains_use = np.argmin(np.abs(domain_angle_offset-angle))
+        temp_angle = domain_angle_offset[domains_use]
+        recon_plot = recon_all_list_normal[domains_use]
+        #plt.imshow(recon_all_list_normal[domains_use], cmap='twilight', alpha = 0.9, vmin=0, vmax=180)
+        #plt.colorbar()
+        
+        ## Plot
+        ax = plt.subplot2grid((7, 7), (channel, 0), colspan=2); 
+        image_channel = np.asarray(util.image_RGB(recon_plot, rgb[channel]))
+        if overlay==[]:
+            overlay = image_channel
+        else: 
+            overlay += image_channel
+        plt.imshow(image_channel); plt.axis('off')
+        plt.title('ori = {:.1f}$^\circ$'.format(domain_angle_offset[ii]))
+        channel += 1
+        
+    ax = plt.subplot2grid((7, 7), (0, 2), rowspan=3, colspan=4); ax.cla()
+    ax.set_facecolor('k')    
+    plt.imshow(overlay)  #, origin='lower') 
 
 
 
