@@ -1,3 +1,4 @@
+# GIWAXS_tomo_2019C3/RLi, Sample S2
 # center, size, peak
 [[575, 479], [60, 10], 'sum002'],
 # 11L

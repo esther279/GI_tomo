@@ -43,7 +43,7 @@ if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 run_steps = [6,7,10] 
 verbose = 0
 flag_LinearSubBKG = 0
-flag_load_peaks = 0 
+flag_load_peaks = 1 
 flag_save_png = 0
 flag_save_npy = 0
 
@@ -57,7 +57,7 @@ filename_peak = './GI_tomo/param/T1_peaks.txt'
 # =============================================================================
 if 1 in run_steps:
     t0 = time.time()   
-    fraction = 10  # Quick checck peak positions
+    fraction = 10  # Quick check peak positions
     for ii, infile in enumerate(infiles):
         if ii%fraction==0: 
             print("{}/{}, {}".format(ii, N_files, infile))
@@ -249,10 +249,11 @@ if 5 in run_steps:
             plt.axis('off')     
             if 'b' in peak: color = [0, 0.5, 0] 
             else: color = 'b'
-            plt.text(-23, np.max(sum_sino)*0.7, peak, fontsize=8, color=color)
+            plt.text(-23, np.max(sum_sino)*0.7, peak, fontsize=6, color=color)
             if ii==0: plt.title(HOME_PATH+', '+filename)
             
-            peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=1)
+            peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=1, fontsize=8, color='r')
+
         
         ## Store peaks and corresponding angles to a df for reconstructing ONE domain
         jj=0
@@ -400,7 +401,7 @@ if 7 in run_steps:
         
         ## Tomo recon
         plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
-        title_st = '[{}] ori={}$^\circ$'.format(ii,offset)
+        title_st = '{}$^\circ$'.format(offset)
         temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=27.2, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
         sino_all_list.append(sino_dm)
         recon_all_list.append(np.squeeze(temp['_fbp']))
