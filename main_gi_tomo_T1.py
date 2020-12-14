@@ -40,10 +40,10 @@ if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 # 7) For each domain, generate sinogram and recon
 # 8-10) Post-processing/Visualization
 
-run_steps = [1] 
-verbose = 5
+run_steps = [6,7,10] 
+verbose = 0
 flag_LinearSubBKG = 0
-flag_load_peaks = 1
+flag_load_peaks = 1 
 flag_save_png = 0
 flag_save_npy = 0
 
@@ -134,11 +134,11 @@ if 2 in run_steps:
     plt.title(filename)
     ax = fig.add_subplot(111)
     ax.imshow(np.log10(data_avg), vmin=0.5, vmax=1.2)
-    peaks.get_peaks(infiles[0], peak_list, phi_max=360, verbose=2, FS=9)
+    peaks.get_peaks(infiles[0], peak_list, phi_max=360, verbose=2)
     
     ## Save png
     if flag_save_png:
-        fn_out = out_dir+'fig5_'+filename+'_peak_roi'
+        fn_out = out_dir+'fig5_'+filename+'_peak_roi.png'
         fn_out = util.check_file_exist(fn_out)
         plt.savefig(fn_out, format='png')
     
@@ -253,6 +253,7 @@ if 5 in run_steps:
             if ii==0: plt.title(HOME_PATH+', '+filename)
             
             peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=1, fontsize=8, color='r')
+
         
         ## Store peaks and corresponding angles to a df for reconstructing ONE domain
         jj=0
@@ -371,8 +372,7 @@ if 6 in run_steps:
     #domain_angle_offset = np.append(domain_angle_offset, np.arange(165,175,1))
     #domain_angle_offset = np.append(domain_angle_offset, np.arange(100,112,1))
     temp = theta[sum_sino>100e3]
-    #domain_angle_offset = temp[temp<180]
-    domain_angle_offset = np.asarray([31.5, 177, 92, 129, 156])
+    domain_angle_offset = temp[temp<180]
     
     domain_angle_offset = np.sort(domain_angle_offset)
     print('domain_angle_offset = {}'.format(domain_angle_offset))
@@ -391,7 +391,7 @@ if 7 in run_steps:
     
         ## Get sino
         flag_normal = 1 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
-        width = 2
+        width = 1
         sino_dm = tomo.get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
         ## Plot sino
         title_st = '{}\nflag_normal={}'.format(filename, flag_normal) if ii==0 else ''

@@ -443,29 +443,6 @@ if 8 in run_steps:
 
 
 # =============================================================================
-# Plot all recons after threshold
-# =============================================================================
-if 9 in run_steps:
-    recon_merged = np.zeros([recon_all_list[0].shape[0], recon_all_list[0].shape[1]])
-    Ndomain = len(domain_angle_offset)
-    
-    plt.figure(40, figsize=[20,10]); plt.clf()
-    for ii, recon in enumerate(recon_all_list):
-        thr = np.max(recon)*0.55
-        print(thr)
-        recon_binary = recon.copy()
-        recon_binary[recon<thr] = -20 #np.nan
-        recon_binary[recon>=thr] = domain_angle_offset[ii]
-        recon_merged = recon_merged + recon_binary
-        
-        plt.subplot(1,Ndomain+1,ii+1)  
-        plt.imshow(recon_binary); plt.axis('off')
-        plt.title('{}\nori = {:.1f}$^\circ$'.format(ii,domain_angle_offset[ii]))
-    plt.subplot(1,Ndomain+1,Ndomain+1)  
-    plt.imshow(recon_merged)
-
-
-# =============================================================================
 # Generate a guess 
 # =============================================================================
 if 10 in run_steps:
