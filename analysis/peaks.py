@@ -98,9 +98,9 @@ def get_peaks(infile, peak_list, phi_max=360, verbose = 0, flag_LinearSubBKG = 0
     if verbose>1: print('Parse param manually for now..\n')
     
     temp = infile.split('_')
-    a = 1
-    pos_x = float(temp[4+a][1:])
+    a = 0
     zigzag_n = int(temp[3+a])
+    pos_x = float(temp[4+a][1:])
     scan_n = int(temp[7+a])
     if zigzag_n%2==0:
         pos_phi = phi_max-float(temp[8+a])/2.0
@@ -129,7 +129,10 @@ def get_peaks(infile, peak_list, phi_max=360, verbose = 0, flag_LinearSubBKG = 0
             size = p[int(ii*2+1)]
             if verbose>1: 
                 util.plot_box(center, size, color=[0.9, 0.9, 0.9]) 
-                plt.text(center[1]-5, center[0]+30*np.random.rand(), str(peak[3:]), color='r', fontsize=FS, fontweight='bold')
+                if str(peak[3:])[0]=='B':
+                    tt = -60
+                else: tt=0
+                plt.text(center[1]-5+tt, center[0]+10*np.random.rand(), str(peak[3:]), color='r', fontsize=FS, fontweight='bold')
             
             peakarea = ArrayCrop(data=data_infile, center=center, size=size) 
             if flag_LinearSubBKG:
