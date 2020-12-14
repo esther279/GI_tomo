@@ -250,9 +250,7 @@ if 0:
     mask = (mask-np.min(mask))/np.max(mask)
     plt.imshow(mask)
     im = Image.fromarray(np.uint8((mask*255)))
-    im.save('mask_S4_gridrec.png')
-
-    
+    im.save('mask_S4_gridrec.png')    
        
     plt.figure(17)
     mask = recon_all['sum002_gridrec'][0,:,:].copy()

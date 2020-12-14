@@ -23,14 +23,16 @@ import analysis.io as io
 os.chdir(HOME_PATH)
 source_dir = './raw/'
 out_dir = './results_tomo/'
-infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff'))
-#infiles = glob.glob(os.path.join(source_dir, '*BTBT_TOMO_test3_*.tiff'))
+infiles = glob.glob(os.path.join(source_dir, '*C8BTBT_0.1Cmin_tomo_*.tiff')) #TIFF or NPZ
 N_files = len(infiles); print('N_files = {}'.format(N_files))
 
-filename = infiles[0][infiles[0].find('C8BTBT'):infiles[0].find('tomo_')+4]
-#filename = infiles[0][infiles[0].find('BTBT'):infiles[0].find('test3_')+6]
-print(filename)
+filename = 'C8BTBT_0.1Cmin_tomo'; print(filename)
 if os.path.exists(out_dir) is False: os.mkdir(out_dir)
+if 'npz' in infiles[0]:
+    infile_type = 'npz'
+else:
+    infile_type =  'tiff'  
+        
 
 #### Steps (**only for the first time)
 # 1) **Load some 2D data to see peak locations
@@ -50,8 +52,7 @@ flag_save_npy = 1
 
 ## Get ROI for each peak from 2D data (step 2)
 filename_peak = './GI_tomo/param/C8BTBT_peaks.txt'
-#filename_peak = './GI_tomo/param/BTBT_peaks.txt'
-
+filename_df_peaks = 'df_peaks_all_subbg{}'.format(flag_LinearSubBKG)
 
 # =============================================================================
 # Load all/some data and plot sum
@@ -61,9 +62,15 @@ if 1 in run_steps:
     fraction = 10  # Quick checck peak positions
     for ii, infile in enumerate(infiles):
         if ii%fraction==0: 
-            print("{}/{}, {}".format(ii, N_files, infile))
-            temp = Image.open(infile).convert('I')
-            data = np.copy(np.asarray(temp))
+            print("{}/{}, {}".format(ii, N_files, infile))            
+            if infile_type == 'npz':
+                temp = np.load(infile)
+                data = temp['image']
+                x_axis = temp['x_axis']
+                y_axis = temp['y_axis']
+            else:
+                temp = Image.open(infile).convert('I')
+                data = np.copy(np.asarray(temp))
             if ii==0:
                 data_sum = data
             else:
@@ -73,7 +80,13 @@ if 1 in run_steps:
         
     # Plot    
     plt.figure(1); plt.clf()
-    plt.imshow(np.log10(data_avg), vmin=1.1, vmax=1.8)
+    if infile_type == 'npz':
+        extent = (np.nanmin(x_axis), np.nanmax(x_axis), np.nanmin(y_axis), np.nanmax(y_axis))
+        plt.imshow(np.log10(data_avg), origin='bottom', extent=extent, vmin=0.5, vmax=1.8) 
+        plt.ylim(0, np.nanmax(y_axis))
+        #plt.grid(axis='x'); plt.colorbar()
+    else:
+        plt.imshow(np.log10(data_avg), vmin=0.5, vmax=1.2)
     plt.colorbar()
     plt.title('Average over {} data (fraction=1/{}) \n {}'.format(N_files,fraction,infiles[0]))
     
@@ -98,7 +111,7 @@ if 1 in run_steps:
         final_img.save(infile_done)     
         
         # Plot qr (after use SciAnalysis on the tiff file)
-        if True:
+        if 0:
             fn = './waxs/analysis/qr_image/TOMO_T1_real_data_avg.npz'
             qinfo = np.load(fn)
             qr_image = qinfo['image']
@@ -126,6 +139,7 @@ if 1 in run_steps:
 else:
     fn_out = out_dir+'data_avg'
     data_avg = np.load(fn_out+'.npy')
+    
 
 ####### Get peak roi from scattering pattern
 peak_list = io.read_peak_list(filename_peak)
@@ -194,9 +208,10 @@ if 3 in run_steps:
 #   1) 00L recon should roughly cover the sample shape
 #   2) Choose algo and rotational center
 # =============================================================================
+if flag_load_peaks:
+    df_peaks = pd.read_csv(out_dir+filename_df_peaks)
+    
 if 4 in run_steps: 
-    if flag_load_peaks:
-        df_peaks = pd.read_csv(out_dir+'df_peaks_all_subbg{}'.format(flag_LinearSubBKG))
     
     ## Create sino from pd data    
     list_peaks = [] # Empty if getting all peaks from df_peaks, else specify eg 'sum11L'

@@ -123,7 +123,7 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
         
         if fignum>0: 
             plt.subplot(3,Npeaks,ii+1)
-        plt.imshow(sino, cmap='jet', aspect='auto') #, extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
+        plt.imshow(sino, cmap='gray', aspect='auto', vmin=0, vmax=1) #, extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
         plt.axis('off')
         
         if fignum>0:
@@ -221,7 +221,7 @@ def get_plot_recon(sino_data, theta = [], rot_center=0, algorithms = ['art', 'gr
             if colorbar:
                 v1 = np.linspace(recon.min(), recon.max(), 2, endpoint=True)
                 cb = plt.colorbar(orientation='horizontal', pad=0.05, ticks=v1)
-                cb.ax.set_xticklabels(["{:.1f}".format(v) if v>1 else "" for v in v1])
+                cb.ax.set_xticklabels(["{:.0f}".format(v) if v>1 else "" for v in v1])
             plt.axis('off')
             
     return recon_all
@@ -349,9 +349,9 @@ def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=15, theory=0):
         if 'Si' in label:
             ax.bar(angle, ones, width=ones*0.01, color='k', alpha=0.6)
             tt = ax.text(angle, 1.24, str(angles_deg[ii]), color='k', fontsize=FS-4, fontweight=FW1, ha='center', va='center')
-        elif '0' in label and label[-1]=='0':
+        elif '0' in label: # and label[-1]=='0':
                 ax.bar(angle, ones*0.8, width=ones*0.01, color=green, alpha=0.8)
-                tt = ax.text(angle, 0.94, str(angles_deg[ii]), color=green, fontsize=FS-4,fontweight=FW1, ha='center', va='center')
+                tt = ax.text(angle, 0.9, str(angles_deg[ii]), color=green, fontsize=FS-4,fontweight=FW1, ha='center', va='center')
         else:
             tt = ax.text(angle, 0.86, str(angles_deg[ii]), color=color, fontsize=FS-4, fontweight=FW1, ha='center',va='center')
             
@@ -363,8 +363,8 @@ def plot_angles(angles_deg, fignum=100, color='r', labels=[], FS=15, theory=0):
         if len(labels)>0:
             if 'Si' in label:
                 tt2 = ax.text(angle, 1.34, label[s:], color='k', fontsize=FS-5, fontweight=FW, ha='center',va='center')
-            elif '0' in label and label[-1]=='0':
-                tt2 = ax.text(angle, 1.13-theory*0.05, label[s:], color=green, fontsize=FS, fontweight=FW, ha='center',va='center')
+            elif '0' in label: #and label[-1]=='0':
+                tt2 = ax.text(angle, 1.05-theory*0.05, label[s:], color=green, fontsize=FS, fontweight=FW, ha='center',va='center')
             else:
                 tt2 = ax.text(angle, 1.0, label[s:], color=color,fontsize=FS, fontweight=FW, ha='center', va='center')
 
