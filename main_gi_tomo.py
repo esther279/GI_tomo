@@ -274,12 +274,14 @@ if 5 in run_steps:
         x[jj] = pd.DataFrame([[190, 'sum21L']], columns=['angle','peak']); jj = jj+1
         x[jj] = pd.DataFrame([[231, 'sum21L']], columns=['angle','peak']); jj = jj+1
         x[jj] = pd.DataFrame([[10, 'sum21L']], columns=['angle','peak']); jj = jj+1
-        '''
+
         for angle in theta[peaks_idx]:
             if 1: #angle<181: #why
                 x[jj] = pd.DataFrame([[angle, peak]], columns=['angle','peak'])
                 jj = jj+1
                 plt.plot([angle, angle], [0, np.max(sum_sino)*1.1], 'r', linewidth=5, alpha=0.3)
+         '''               
+         x = angles.get_angles_BTBT()   
         
     #--- Save to npy
     if flag_save_npy:
@@ -300,7 +302,7 @@ if 5 in run_steps:
     print(temp_list) #print(list_peaks_angles_orig.sort_values('angle'))
     
     ## Remove peaks not needed for sino
-    if 0:
+    if 1:
         list_peaks_angles_orig = temp_list[temp_list.peak !='sumSi']
     else:
         temp = np.load('/home/etsai/BNL/Research/GIWAXS_tomo_2019C3/RLi/waxs/results_tomo/list_peaks_angles_orig.npy', allow_pickle=True)
@@ -309,7 +311,7 @@ if 5 in run_steps:
     print('## Compare the list with the figure and drop unwanted peaks.')
     list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSib']
     #list_peaks_angles_orig = list_peaks_angles_orig.drop([24])   #list_peaks_angles_orig.copy()
-    #list_peaks_angles_orig = list_peaks_angles_orig.drop([29]) 
+
     print(list_peaks_angles_orig)
     tomo.plot_angles(list_peaks_angles_orig['angle'], fignum=21)    
     
