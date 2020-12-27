@@ -123,7 +123,7 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
         
         if fignum>0: 
             plt.subplot(3,Npeaks,ii+1)
-        plt.imshow(sino, cmap='bone', aspect='auto', vmin=0, vmax=1) #, extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
+        plt.imshow(sino, cmap='bone', aspect='auto') #, vmin=0, vmax=1) #, extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
         plt.axis('off')
         
         if fignum>0:
@@ -174,8 +174,9 @@ def get_plot_recon(sino_data, theta = [], rot_center=0, algorithms = ['art', 'gr
         list_peaks = []
     theta_rad = theta/180*np.pi 
         
-    if fignum>0: 
-        plt.figure(fignum, figsize=[12,12]); plt.clf()    
+    if fignum is not None:
+        if fignum>0: 
+            plt.figure(fignum, figsize=[12,12]); plt.clf()    
     Npeaks =  sino_allpeaks.shape[2]  
     recon_all = {}
     for ii in np.arange(0, sino_allpeaks.shape[2]):
@@ -207,22 +208,25 @@ def get_plot_recon(sino_data, theta = [], rot_center=0, algorithms = ['art', 'gr
         for jj, algo in enumerate(algorithms):
             recon = tomopy.recon(sino, theta_rad, center=rot_center, algorithm=algo)
             recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
-            #recon[recon==0] = np.nan
-            if fignum>0: 
-                plt.subplot(len(algorithms), Npeaks, (jj)*Npeaks+ii+1)
-            plt.imshow(recon[0, :,:], cmap='jet') #, vmin=0, vmax=1.5e7)
-            if title_st==[]:
-                if ii%2: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)), fontweight='bold')
-                else: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)))
-            else:
-                plt.title(title_st)
-
+            
             recon_all[peak+'_'+algo] = recon
-            if colorbar:
-                v1 = np.linspace(recon.min(), recon.max(), 2, endpoint=True)
-                cb = plt.colorbar(orientation='horizontal', pad=0.05, ticks=v1)
-                cb.ax.set_xticklabels(["{:.0f}".format(v) if v>1 else "" for v in v1])
-            plt.axis('off')
+            
+            #recon[recon==0] = np.nan
+            if fignum is not None:
+                if fignum>0: 
+                    plt.subplot(len(algorithms), Npeaks, (jj)*Npeaks+ii+1)
+                plt.imshow(recon[0, :,:], cmap='jet') #, vmin=0, vmax=1.5e7)
+                if title_st==[]:
+                    if ii%2: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)), fontweight='bold')
+                    else: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)))
+                else:
+                    plt.title(title_st)
+    
+                if colorbar:
+                    v1 = np.linspace(recon.min(), recon.max(), 2, endpoint=True)
+                    cb = plt.colorbar(orientation='horizontal', pad=0.05, ticks=v1)
+                    cb.ax.set_xticklabels(["{:.0f}".format(v) if v>1 else "" for v in v1])
+                plt.axis('off')
             
     return recon_all
 
