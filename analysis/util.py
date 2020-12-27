@@ -6,6 +6,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 
+
+def plot_quiver(angle):
+    angle = angle+90
+    N, M = angle.shape
+    X, Y = np.meshgrid(np.arange(0, N), np.arange(0, M))
+    U = np.zeros([N,M])
+    V = np.zeros([N,M])
+    for ii in np.arange(0,N):
+      for jj in np.arange(0,M):
+        U[ii,jj] = np.sin(angle[ii,jj]/180*np.pi)
+        V[ii,jj] = np.cos(angle[ii,jj]/180*np.pi)
+    
+    plt.quiver(X, Y, V, U , units='width', headwidth =0, minshaft=0.05 , minlength=0.5, width=0.005, color='w')
+
+
 # =============================================================================
 # Plot a box
 # =============================================================================

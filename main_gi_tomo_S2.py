@@ -43,13 +43,16 @@ if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 # 8-10) Post-processing/Visualization
 
 run_steps = [10] 
-flag_LinearSubBKG = 1
+flag_LinearSubBKG = 0
 flag_load_peaks = 1 
 flag_save_png = 0
 flag_save_npy = 0
+verbose = 0
 
 ## Get ROI for each peak from 2D data (step 2)
-filename_peak = './GI_tomo/param/C8BTBT_S2_peaks.txt'
+filename_peak = './GI_tomo/param/C8BTBT_S2_test_peaks.txt'
+#filename_peak = './GI_tomo/param/C8BTBT_S2_peaks.txt'
+extra = '_2'
 #filename_peak = './GI_tomo/param/BTBT_peaks.txt'
 
 
@@ -99,15 +102,15 @@ if 1 in run_steps:
         final_img.save(infile_done)     
         
         # Plot qr (after use SciAnalysis on the tiff file)
-        if False:
-            fn = './waxs/analysis/qr_image/TOMO_T1_real_data_avg.npz'
+        if 1:
+            fn = './analysis/qr_image/CBTBT_0.1Cmin_tomo_real_data_avg.npz'
             qinfo = np.load(fn)
             qr_image = qinfo['image']
             x_axis = qinfo['x_axis']
             y_axis = qinfo['y_axis']
             extent = (np.nanmin(x_axis), np.nanmax(x_axis), np.nanmin(y_axis), np.nanmax(y_axis))
             plt.figure(11, figsize=[12,8]); plt.clf()
-            plt.imshow(np.log10(qr_image), origin='bottom', extent=extent, vmin=1.1, vmax=1.8) 
+            plt.imshow(np.log10(qr_image), origin='bottom', extent=extent, vmin=0.5, vmax=1.1) 
             plt.ylim(0, np.nanmax(y_axis))
             plt.grid(axis='x'); plt.colorbar()
             plt.title(fn)
@@ -135,8 +138,8 @@ if 2 in run_steps:
     fig = plt.figure(5, figsize=[12,12]); plt.clf(); 
     plt.title(filename)
     ax = fig.add_subplot(111)
-    ax.imshow(np.log10(data_avg), vmin=0.6, vmax=1.2)
-    peaks.get_peaks(infiles[0], peak_list, phi_max=180, verbose=2, FS=17)
+    ax.imshow(np.log10(data_avg), vmin=0.6, vmax=1.1)
+    peaks.get_peaks(infiles[0], peak_list, phi_max=360, a=1, verbose=2, FS=17)
     
     ## Save png
     if flag_save_png:
@@ -159,12 +162,13 @@ if 3 in run_steps:
     flag_load_parellel = 0  # Sometimes parallel doesn't work..
     if flag_load_parellel:
         with Parallel(n_jobs=3) as parallel:
-            results = parallel( delayed(peaks.get_peaks)(infile, peak_list, phi_max=180, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG) for infile in infiles )
+            results = parallel( delayed(peaks.get_peaks)(infile, peak_list, phi_max=360, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG) for infile in infiles )
     else:
         results = []
         for ii, infile in enumerate(infiles):
-            #if ii%10==0:
-            temp = peaks.get_peaks(infile, peak_list, phi_max=180, verbose=1, flag_LinearSubBKG=flag_LinearSubBKG)
+            if ii%10==0:
+                print('{}'.format(ii))
+            temp = peaks.get_peaks(infile, peak_list, phi_max=360, verbose=0, flag_LinearSubBKG=flag_LinearSubBKG)
             results.append(temp)
     print("\nLoad data and define peak roi: {:.0f} s".format(time.time()-t0))
     
@@ -177,7 +181,7 @@ if 3 in run_steps:
     print(df_peaks.columns)
     
     # Save 
-    fn_out = out_dir+'df_peaks_all_subbg{}'.format(flag_LinearSubBKG)
+    fn_out = out_dir+'df_peaks_all_subbg{}{}'.format(flag_LinearSubBKG, extra)
     fn_out = util.check_file_exist(fn_out)
     df_peaks.to_csv(fn_out)
  
@@ -197,7 +201,7 @@ if 3 in run_steps:
 # =============================================================================
 if 4 in run_steps: 
     if flag_load_peaks:
-        df_peaks = pd.read_csv(out_dir+'df_peaks_all_subbg{}'.format(flag_LinearSubBKG))
+        df_peaks = pd.read_csv(out_dir+'df_peaks_all_subbg{}{}'.format(flag_LinearSubBKG,extra))
     
     ## Create sino from pd data    
     list_peaks = [] # Empty if getting all peaks from df_peaks, else specify eg 'sum11L'
@@ -256,14 +260,14 @@ if 5 in run_steps:
         plt.axis('off')     
         if 'b' in peak: color = [0, 0.5, 0] 
         else: color = 'b'
-        plt.text(-23, np.max(sum_sino)*0.7, peak, fontsize=8, color=color)
+        plt.text(-60, np.max(sum_sino)*0.7, peak, fontsize=10, color=color)
         if ii==0: plt.title(HOME_PATH+', '+filename)
         
         peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=1)
         
         ## Store peaks and corresponding angles to a df for reconstructing ONE domain
         for angle in theta[peaks_idx]:
-            if angle<348: #angle<181: #why
+            if angle<360: #angle<181: #why
                 x[jj] = pd.DataFrame([[angle, peak]], columns=['angle','peak'])
                 jj = jj+1
                 plt.plot([angle, angle], [0, np.max(sum_sino)*1.1], 'r', linewidth=5, alpha=0.3)
@@ -306,7 +310,7 @@ if 5 in run_steps:
         fn_out = util.check_file_exist(fn_out)
         plt.savefig(fn_out, format='png')
     
-
+    np.save(out_dir+'list_peaks_angles_orig.npy', list_peaks_angles_orig)
          
 # =============================================================================
 # Different domains
@@ -315,21 +319,22 @@ if 5 in run_steps:
 # Each domain should have eg 11L showing up at certain rotational angles. Assuming the angular sampling is sufficient and that scattering at 11L has sufficient scatering SNR, all domains are captured in the 11L sinogram.
 # =============================================================================
 if 6 in run_steps: 
-    plt.figure(25, figsize=[20, 10]); plt.clf()
-    peak_strong = 'sum02L'
-    sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, peak_strong) #choose
-    plt.subplot(1,2,1)
-    plt.imshow(sino); plt.axis('auto'); plt.ylabel('rotational angle in deg')
-    plt.subplot(1,2,2)
-    plt.plot(theta, sum_sino);  
-    plt.title('sum_sino for {}'.format(peak_strong)); plt.grid()
-    peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=0, fontsize=8)
-    print(*theta[peaks_idx], sep=', ')
-    
-    if flag_save_png:
-        fn_out = out_dir+'fig25_angles' #+peak
-        fn_out = util.check_file_exist(fn_out)
-        plt.savefig(fn_out, format='png')
+    if verbose>1:
+        plt.figure(25, figsize=[20, 10]); plt.clf()
+        peak_strong = 'sum02L'
+        sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, peak_strong) #choose
+        plt.subplot(1,2,1)
+        plt.imshow(sino); plt.axis('auto'); plt.ylabel('rotational angle in deg')
+        plt.subplot(1,2,2)
+        plt.plot(theta, sum_sino);  
+        plt.title('sum_sino for {}'.format(peak_strong)); plt.grid()
+        peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=0, fontsize=8)
+        print(*theta[peaks_idx], sep=', ')
+        
+        if flag_save_png:
+            fn_out = out_dir+'fig25_angles' #+peak
+            fn_out = util.check_file_exist(fn_out)
+            plt.savefig(fn_out, format='png')
 
     ####### Specify domains
     print('## Select the main peaks for reconstruction of different domains. See above for recommendations.')
@@ -345,7 +350,12 @@ if 6 in run_steps:
 if 7 in run_steps: 
     recon_all_list = []; sino_all_list = []
     list_peaks_angles = list_peaks_angles_orig.copy()
-    plt.figure(30, figsize=[20, 10]); plt.clf()
+    
+    flag_normal = 1 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
+    width = 1
+    algo = 'fbp'
+    
+    if verbose>1: plt.figure(30, figsize=[20, 10]); plt.clf()
     for ii, offset in enumerate(domain_angle_offset):  
         print('offset = {}'.format(offset))
         angles_old = list_peaks_angles_orig['angle'] -112
@@ -353,23 +363,27 @@ if 7 in run_steps:
         list_peaks_angles['angle'] = angles_new
     
         ## Get sino
-        flag_normal = 3 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
-        width = 1
         sino_dm = tomo.get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), phi_max=360, width=width, flag_normal=flag_normal, verbose=1)
         ## Plot sino
-        title_st = '{}\nflag_normal={}'.format(filename, flag_normal) if ii==0 else ''
-        plt.subplot(2,len(domain_angle_offset),ii+1)
-        tomo.plot_sino((sino_dm), theta = sino_dict['theta'], axis_x = sino_dict['axis_x'], title_st=title_st, fignum=-1)
+        if verbose>1: 
+            if ii==0:
+                title_st = '{}\nflag_normal={}'.format(filename,flag_normal) 
+            else:
+                title_st = ''
+            plt.subplot(2,len(domain_angle_offset),ii+1)
+            tomo.plot_sino((sino_dm), theta = sino_dict['theta'], axis_x = sino_dict['axis_x'], title_st=title_st, fignum=-1)
         #plot_angles(list_peaks_angles['angle'], fignum=51)    
         
         ## Tomo recon
-        plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
-        title_st = '[{}] ori={}$^\circ$'.format(ii,offset)
-        temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=29, algorithms = ['fbp'], title_st=title_st, fignum=-1, colorbar=True)
+            plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
+            title_st = '[{}] ori={}$^\circ$'.format(ii,offset)
+        else: 
+            title_st = ''
+        temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=29, algorithms = [algo], title_st=title_st, fignum=None, colorbar=True)
         sino_all_list.append(sino_dm)
-        recon_all_list.append(np.squeeze(temp['_fbp']))
+        recon_all_list.append(np.squeeze(temp['_{}'.format(algo)]))
        
-    if flag_save_png:     
+    if verbose>1 and flag_save_png:     
         fn_out = out_dir+'fig30_recon'
         fn_out = util.check_file_exist(fn_out)
         plt.savefig(fn_out, format='png')
@@ -476,7 +490,7 @@ if 10 in run_steps:
     plt.figure(45); plt.clf()
     if 1:
         x = np.asarray(Image.open("./mask_S2b.png").convert("L").resize((50,50)))
-        plt.imshow(x, alpha = 1, cmap='gray')
+        plt.imshow(x, alpha = 1, cmap='binary')
         x = x.astype('float')
         x[x<3] = 0
         x[x>0] = 1.0
@@ -484,11 +498,12 @@ if 10 in run_steps:
     else:
         x = 1
     
-    plt.imshow(domains_recon*x, cmap='twilight', alpha = 0.9, vmin=0, vmax=180)
-    cbar = plt.colorbar(fraction=0.05, pad=0.0, aspect=25) 
+    plt.imshow(domains_recon*x, cmap='twilight', alpha = 0.95, vmin=0, vmax=180)
+    cbar = plt.colorbar(fraction=0.03, pad=0.0, aspect=20) 
+    util.plot_quiver(domains_recon*x)
     plt.axis('off')
-    plt.plot([5, 10], [45, 45], linewidth=4, color='w')
-    plt.text(4.8, 43.7, '1mm', color='w', fontweight='bold', fontsize=10)
+    plt.plot([5, 10], [45, 45], linewidth=4, color='k')
+    plt.text(4.8, 43.7, '1mm', color='k', fontweight='bold', fontsize=10)
     
     
     ## Save 
