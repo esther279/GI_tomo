@@ -6,7 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 
-
+# =============================================================================
+# Plot quiver
+# =============================================================================
 def plot_quiver(angle):
     angle = angle+90
     N, M = angle.shape
