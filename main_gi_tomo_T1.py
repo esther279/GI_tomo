@@ -41,7 +41,7 @@ if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 # 7) For each domain, generate sinogram and recon
 # 8-10) Post-processing/Visualization
 
-run_steps = [6,7,9,10] 
+run_steps = [10] 
 flag_LinearSubBKG = 0
 flag_load_peaks = 1 
 
@@ -442,11 +442,48 @@ if 7 in run_steps:
         plt.savefig(fn_out, format='png')
    
 # =============================================================================
-# Plot some recons after threshold
+# Load mask
 # =============================================================================
+if 1:
+    x = np.asarray(Image.open("./mask_T1.png").convert("L").rotate(0).resize((50,50)))
+    #x = np.pad(x, [(0, 2), (0, 2)], mode='constant', constant_values=0)
+    #x = np.roll(x, 3, axis=0)
+    #x = np.roll(x, 0, axis=1)
+    # plt.imshow(x, alpha = 1, cmap='binary')
+    x = x.astype('float')
+    x[x<3] = 0
+    x[x>0] = 1.0
+    x[x==0] = np.nan
+else:
+    x = 1
+
+# =============================================================================
+# Plot a domain
+# =============================================================================    
+if 8 in run_steps:
+    domain_plot = 32.5 # in deg
+
+    plt.figure(35, figsize=[8,8]); plt.clf()   
+
+    idx = np.argmin(np.abs(domain_angle_offset - domain_plot))
+    recon = recon_all_list[idx]
+    recon[recon<thr[ii]] = 0 #np.nan   
+    
+    plt.imshow(x, alpha = 1, cmap='binary')
+    plt.imshow(recon*x); plt.axis('off')
+    plt.title('{:.1f}$^\circ$'.format(domain_angle_offset[idx]))
+    
+    ##------ Save PNG
+    if flag_save_png:     
+        fn_out = out_dir+'fig35_recon'
+        fn_out = util.check_file_exist(fn_out)
+        plt.savefig(fn_out, format='png')
+
+# =============================================================================
+# Plot some recons after threshold
+# =============================================================================    
 if 9 in run_steps:
     ##------ Sort domains by the largest recon val
-    #recon_merged = np.zeros([recon_all_list[0].shape[0], recon_all_list[0].shape[1]])
     Ndomain = len(domain_angle_offset)    
     thr = np.zeros([Ndomain])
     for ii, recon in enumerate(recon_all_list):
@@ -454,22 +491,8 @@ if 9 in run_steps:
         
     idx_large = np.argsort(thr)
 
-    ##------ Load mask
-    plt.figure(40, figsize=[20,10]); plt.clf()
-    if 1:
-        x = np.asarray(Image.open("./mask_T1.png").convert("L").rotate(0).resize((50,50)))
-        #x = np.pad(x, [(0, 2), (0, 2)], mode='constant', constant_values=0)
-        #x = np.roll(x, 3, axis=0)
-        #x = np.roll(x, 0, axis=1)
-        # plt.imshow(x, alpha = 1, cmap='binary')
-        x = x.astype('float')
-        x[x<3] = 0
-        x[x>0] = 1.0
-        x[x==0] = np.nan
-    else:
-        x = 1
-    
     ##------ Plot the domains with large recon val
+    plt.figure(40, figsize=[20,10]); plt.clf()   
     for ii in np.arange(1,31):
         idx = idx_large[-ii]
         recon = recon_all_list[idx]
@@ -507,31 +530,17 @@ if 10 in run_steps:
     temp_angle = domain_angle_offset[domains_use]
     domains_recon = mask_nan*temp_angle[np.argmax(recon_all_list_normal,0)]
     
-    ##------ Load mask
-    plt.figure(45); plt.clf()
-    if 1:
-        x = np.asarray(Image.open("./mask_T1.png").convert("L").rotate(0).resize((50,50)))
-        #x = np.pad(x, [(0, 2), (0, 2)], mode='constant', constant_values=0)
-        #x = np.roll(x, 3, axis=0)
-        #x = np.roll(x, 0, axis=1)
-        plt.imshow(x, alpha = 1, cmap='binary')
-        x = x.astype('float')
-        x[x<3] = 0
-        x[x>0] = 1.0
-        x[x==0] = np.nan
-    else:
-        x = 1
-    
+    ##------ Plot
+    plt.figure(45); plt.clf()   
     plt.imshow(domains_recon*x, cmap='twilight', alpha = 0.9)
-    cbar = plt.colorbar(fraction=0.03, pad=0.0, aspect=20) 
+    cbar = plt.colorbar(fraction=0.03, pad=0.0, aspect=15) 
     #plt.title('orientation angles {}'.format(temp_angle))
     util.plot_quiver(domains_recon*x)
     plt.axis('off')
     plt.plot([5, 10], [45, 45], linewidth=4, color='k')
-    plt.text(4.8, 43.7, '1mm', color='k', fontweight='bold', fontsize=10)
+    plt.text(4.8, 43.7, '1mm', color='k', fontweight='bold', fontsize=10)    
     
-    
-    ## Save 
+    ##------ Save PNG
     if flag_save_png:    
         fn_out = out_dir+'fig45_domains_recon'
         fn_out = util.check_file_exist(fn_out)
