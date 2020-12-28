@@ -101,7 +101,7 @@ def get_sino_sum(sino_data):
 # =============================================================================
 # Plot sinogram
 # =============================================================================
-def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino', vlog10=[0, 6]):   
+def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino', vlog10=[0, 6], cmap='GnBu'):   
     if type(sino_data)==dict:
         sino_allpeaks = sino_data['sino_allpeaks']
         theta = sino_data['theta']
@@ -124,7 +124,7 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
         if fignum>0: 
             plt.subplot(3,Npeaks,ii+1)
 
-        plt.imshow(sino, cmap='gray', aspect='auto') #, vmin=0, vmax=1) #, extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
+        plt.imshow(sino, cmap=cmap, aspect='auto') #, vmin=0, vmax=1) #, extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
         plt.axis('off')
         
         if fignum>0:

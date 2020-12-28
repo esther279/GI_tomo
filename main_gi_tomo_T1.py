@@ -30,7 +30,6 @@ N_files = len(infiles); print('N_files = {}'.format(N_files))
 print(filename)
 if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 
-
 #### Steps (**only for the first time)
 # 1) **Load some 2D data to see peak locations
 # 2) **Select/Load roi for peaks 
@@ -41,7 +40,7 @@ if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 # 7) For each domain, generate sinogram and recon
 # 8-10) Post-processing/Visualization
 
-run_steps = [10] 
+run_steps = [5] 
 flag_LinearSubBKG = 0
 flag_load_peaks = 1 
 
@@ -51,9 +50,15 @@ extra='_more'
 verbose = 0
 
 ## Get ROI for each peak from 2D data (step 2)
-filename_peak = './GI_tomo/param/C8BTBT_S2_peaks.txt'
+filename_peak = './GI_tomo/param/T1_peaks.txt'
 #filename_peak = './GI_tomo/param/BTBT_peaks.txt'
 
+
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', -1)
 
 # =============================================================================
 # Load all/some data and plot sum
@@ -130,7 +135,6 @@ if 1 in run_steps:
 ####### Get peak roi from scattering pattern
 peak_list = io.read_peak_list(filename_peak)
 
-
 if 0:
     q_file = HOME_PATH+'analysis/q_image/TOMO_S4_sam3_R_10_x-3.400_th0.110_1.00s_42366_000000_waxs.npz'
     temp = np.load(q_file)
@@ -142,8 +146,6 @@ if 0:
     #fig = plt.figure(4, figsize=[8,8]); plt.clf(); 
     #X, Y = np.meshgrid(x_axis, y_axis)
     #plt.pcolormesh(X, Y, np.log10(q_image))
-
-
 #    calibration.set_beam_position(462, 1043-398)
 
 if 2 in run_steps:     
@@ -151,7 +153,7 @@ if 2 in run_steps:
     fig = plt.figure(5, figsize=[12,12]); plt.clf(); 
     plt.title(filename)
     ax = fig.add_subplot(111)
-    ax.imshow(np.log10(data_avg), vmin=0.5, vmax=1.3)
+    ax.imshow(np.log10(data_avg), vmin=0.5, vmax=1.25)
     peaks.get_peaks(infiles[0], peak_list, phi_max=360, verbose=2)
     #ax.set_xlim(145,981)
     #ax.set_ylim(670,0)
@@ -235,18 +237,34 @@ if 4 in run_steps:
     sino_dict['areas'] = peaks.calc_area_peakROI(peak_list) # Assuming list_peaks are the same as peak_list
 
     ## Plot sino
-    tomo.plot_sino(sino_dict, fignum=10, title_st=filename, vlog10=[0, 5.5])
+    #tomo.plot_sino(sino_dict['sino_allpeaks'][:,:,0], theta=sino_dict['theta'], fignum=10, cmap='gray')   #'GnBu'
+    plt.figure(10, figsize=[8,8]); plt.clf()
+    plt.imshow(sino_dict['sino_allpeaks'][:,:,1], extent=[0, 50, 360, 0], cmap='gray_r')
+    plt.axis('auto')
     if flag_save_png:
-        fn_out = out_dir+'fig10_'+filename+'peaks_sino' 
+        fn_out = out_dir+'fig10_sino'; 
         fn_out = util.check_file_exist(fn_out)
         plt.savefig(fn_out, format='png')
         
+    if verbose>1:
+        tomo.plot_sino(sino_dict, fignum=11, title_st=filename, vlog10=[0, 5.5])
+        if flag_save_png:
+            fn_out = out_dir+'fig11_'+filename+'peaks_sino' 
+            fn_out = util.check_file_exist(fn_out)
+            plt.savefig(fn_out, format='png')
+            
     ## Do and plot recon
-    recon_all = tomo.get_plot_recon(sino_dict, rot_center=28, algorithms = ['gridrec', 'fbp', 'tv'], fignum=15)
+    rot_center = 27.2
+    recon_00L = tomo.get_plot_recon(sino_dict['sino_allpeaks'][:,:,0], theta=sino_dict['theta'], rot_center=rot_center, algorithms = ['gridrec', 'fbp', 'tv'], fignum=13)
+    
     if flag_save_png:
         fn_out = out_dir+'fig15_'+filename+'peaks_sino_tomo_subbg'+str(flag_LinearSubBKG); 
         fn_out = util.check_file_exist(fn_out)
         plt.savefig(fn_out, format='png')
+
+    if verbose>1:
+        recon_all = tomo.get_plot_recon(sino_dict, rot_center=rot_center, algorithms = ['gridrec', 'fbp', 'tv'], fignum=16)
+
 
 if 0:  
     plt.figure(16)
@@ -338,9 +356,11 @@ if 5 in run_steps:
         list_peaks_angles_orig = temp_list[temp_list.peak !='sumSi']
     else:
         temp = np.load(HOME_PATH+'/GI_tomo/list_peaks_angles_orig_S2.npy', allow_pickle=True)
-        list_peaks_angles_orig=pd.DataFrame(temp,columns=['angle','peak'])
+        list_peaks_angles_orig = pd.DataFrame(temp,columns=['angle','peak'])
+        list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSi']
+        list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSib']
         
-    print('## Compare the list with the figure and drop unwanted peaks.')
+    #print('## Compare the list with the figure and drop unwanted peaks.')
     #list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSib']
     #rm = []
     #for tt, temp in enumerate(list_peaks_angles_orig.peak):
@@ -348,8 +368,10 @@ if 5 in run_steps:
     #list_peaks_angles_orig = list_peaks_angles_orig.drop(rm)
 
     print(list_peaks_angles_orig)
-    tomo.plot_angles(list_peaks_angles_orig['angle']+90, labels=list_peaks_angles_orig['peak'], color='b', FS=14, fignum=21)    
-    
+    if verbose>1:
+        #tomo.plot_angles(list_peaks_angles_orig['angle']+90, labels=list_peaks_angles_orig['peak'], color='b', FS=9, fignum=21)    
+        tomo.plot_angles(list_peaks_angles_orig['angle']+90, labels=[], color='b', FS=9, fignum=21)  
+        
     if flag_save_png:
         fn_out = out_dir+'fig21_angles' #+peak
         fn_out = util.check_file_exist(fn_out)
@@ -367,19 +389,16 @@ if 6 in run_steps:
     peak_strong = 'sum02L'
     sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, peak_strong) #choose
     
-    if verbose>0:
+    if verbose>-1:
         plt.figure(25, figsize=[20, 10]); plt.clf()
         plt.subplot(1,2,1)
-        plt.imshow(np.log10(sino)); plt.axis('auto'); plt.ylabel('rotation')
+        plt.imshow(sino, extent=[1, 50, 360, 0]); plt.axis('auto'); #plt.ylabel('rotation')
+        #plt.imshow(sino); plt.axis('auto'); plt.ylabel('rotation')
         plt.subplot(1,2,2)
-        plt.plot(theta, sum_sino);  
-        plt.title('sum_sino for {}'.format(peak_strong)); plt.grid()
-        peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=0, fontsize=8)
-        print(*theta[peaks_idx], sep=', ')        
-        if flag_save_png:
-            fn_out = out_dir+'fig25_angles' #+peak
-            fn_out = util.check_file_exist(fn_out)
-            plt.savefig(fn_out, format='png')
+        plt.plot(theta, sum_sino, alpha=0.8);  
+        plt.title('sum_sino for {}'.format(peak_strong)); #plt.grid()
+        #peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=0, fontsize=8)
+        print(*theta[peaks_idx], sep=', ')       
 
     ####### Specify domains
     print('## Select the main peaks for reconstruction of different domains. See above for recommendations.')
@@ -390,12 +409,21 @@ if 6 in run_steps:
     #domain_angle_offset= np.append(domain_angle_offset, np.arange(174, 181, 1))     
     #domain_angle_offset= np.append(domain_angle_offset, [0, 1])    
     
-    domain_angle_offset = theta[sum_sino>1000]
+    domain_angle_offset = theta[sum_sino>3000]
     domain_angle_offset = domain_angle_offset[domain_angle_offset<=180]
     
     domain_angle_offset = np.sort(domain_angle_offset)
     print('Nangle={}, domain_angle_offset = {}'.format(len(domain_angle_offset), domain_angle_offset))
-          
+    
+    if verbose>-1:
+        plt.figure(25); plt.subplot(1,2,2)
+        plt.bar(domain_angle_offset, np.ones(domain_angle_offset.size)*np.max(sum_sino)*1.02, alpha=0.2, color='r', width=0.5);  
+         
+        if flag_save_png:
+            fn_out = out_dir+'fig25_sum_sino' #+peak
+            fn_out = util.check_file_exist(fn_out)
+            plt.savefig(fn_out, format='png')
+            
 # =============================================================================
 # Do recon for each domain
 # =============================================================================
@@ -403,9 +431,9 @@ if 7 in run_steps:
     recon_all_list = []; sino_all_list = []
     list_peaks_angles = list_peaks_angles_orig.copy()
 
-    flag_normal = 1 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
+    flag_normal = 3 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
     width = 1
-    algo = 'fbp'
+    algo = 'fbp' #'gridrec' #'fbp'
         
     if verbose> 0:
         plt.figure(30, figsize=[20, 10]); plt.clf()
@@ -429,9 +457,9 @@ if 7 in run_steps:
         if verbose> 0:
             plt.subplot(2,len(domain_angle_offset),len(domain_angle_offset)+ii+1)
             title_st = '{}$^\circ$'.format(offset)      
-            temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=28, algorithms = [algo], title_st=title_st, fignum=-1, colorbar=True)
+            temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=rot_center, algorithms = [algo], title_st=title_st, fignum=-1, colorbar=True)
         else:
-            temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=28, algorithms = [algo], title_st='', fignum=None, colorbar=True)
+            temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=rot_center, algorithms = [algo], title_st='', fignum=None, colorbar=True)
             
         sino_all_list.append(sino_dm)
         recon_all_list.append(np.squeeze(temp['_{}'.format(algo)]))
@@ -442,7 +470,7 @@ if 7 in run_steps:
         plt.savefig(fn_out, format='png')
    
 # =============================================================================
-# Load mask
+# Load mask & Define thr
 # =============================================================================
 if 1:
     x = np.asarray(Image.open("./mask_T1.png").convert("L").rotate(0).resize((50,50)))
@@ -457,22 +485,47 @@ if 1:
 else:
     x = 1
 
+Ndomain = len(domain_angle_offset)    
+thr = np.zeros([Ndomain])
+for ii, recon in enumerate(recon_all_list):
+    thr[ii] = np.nanmax(recon)*0.2
+
 # =============================================================================
 # Plot a domain
-# =============================================================================    
+# =============================================================================          
 if 8 in run_steps:
-    domain_plot = 32.5 # in deg
-
-    plt.figure(35, figsize=[8,8]); plt.clf()   
-
+    domain_plot = 90 ## in deg
     idx = np.argmin(np.abs(domain_angle_offset - domain_plot))
-    recon = recon_all_list[idx]
-    recon[recon<thr[ii]] = 0 #np.nan   
     
+    if 1:   ## Tune recon param
+        flag_normal = 1 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
+        width = 0
+        algo = 'fbp' ##'gridrec' #'fbp'
+
+        offset = domain_angle_offset[idx]
+        print('offset = {}'.format(offset))
+        angles_old = list_peaks_angles_orig['angle'] - 112
+        angles_new = angles_old + offset
+        list_peaks_angles['angle'] = angles_new
+        
+        sino_dm = tomo.get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
+        temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=rot_center, algorithms = [algo], title_st='', fignum=None, colorbar=True)        
+        recon = np.squeeze(temp['_{}'.format(algo)])
+    else:   
+        recon = recon_all_list[idx]
+        sino_dm = sino_all_list[idx]
+    
+    recon[recon<thr[ii]] = 0 #np.nan   
+
+    plt.figure(37, figsize=[8,8]); plt.clf() 
+    plt.subplot(1,2,1)     
+    plt.imshow(sino_dm)
+    
+    plt.subplot(1,2,2)
     plt.imshow(x, alpha = 1, cmap='binary')
     plt.imshow(recon*x); plt.axis('off')
     plt.title('{:.1f}$^\circ$'.format(domain_angle_offset[idx]))
-    
+
     ##------ Save PNG
     if flag_save_png:     
         fn_out = out_dir+'fig35_recon'
@@ -483,12 +536,7 @@ if 8 in run_steps:
 # Plot some recons after threshold
 # =============================================================================    
 if 9 in run_steps:
-    ##------ Sort domains by the largest recon val
-    Ndomain = len(domain_angle_offset)    
-    thr = np.zeros([Ndomain])
-    for ii, recon in enumerate(recon_all_list):
-        thr[ii] = np.max(recon)*0.20
-        
+    ##------ Sort domains by the largest recon val       
     idx_large = np.argsort(thr)
 
     ##------ Plot the domains with large recon val
@@ -520,7 +568,7 @@ if 10 in run_steps:
     for ii in domains_use:      
         recon = recon_all_list[ii]
         recon_thr = recon.copy()
-        recon_thr[recon<np.max(recon)*0.15]=0
+        recon_thr[recon<thr[ii]] = 0
         recon_all_list_normal.append(recon_thr/np.max(1))
         
     mask = (recon!=0).astype(float)
@@ -531,10 +579,9 @@ if 10 in run_steps:
     domains_recon = mask_nan*temp_angle[np.argmax(recon_all_list_normal,0)]
     
     ##------ Plot
-    plt.figure(45); plt.clf()   
-    plt.imshow(domains_recon*x, cmap='twilight', alpha = 0.9)
-    cbar = plt.colorbar(fraction=0.03, pad=0.0, aspect=15) 
-    #plt.title('orientation angles {}'.format(temp_angle))
+    plt.figure(45, figsize=[8,8]); plt.clf()   
+    plt.imshow(domains_recon*x, cmap='twilight', alpha = 0.9, vmin=0, vmax=180)
+    cbar = plt.colorbar(fraction=0.03, pad=0.0, aspect=16) 
     util.plot_quiver(domains_recon*x)
     plt.axis('off')
     plt.plot([5, 10], [45, 45], linewidth=4, color='k')
@@ -557,6 +604,63 @@ if 10 in run_steps:
         fn_out = out_dir+'rot_angles.npy'
         np.save(fn_out, rot_angles)
 
+# =============================================================================
+# Overlay
+# =============================================================================    
+if 11 in run_steps:    
+    domain_angles = [18, 128, 160] ## in deg
+    idx_use = []
+    for angle in domain_angles:
+        idx = np.argmin(np.abs(domain_angle_offset - angle))
+        idx_use.append(idx)
+    
+    rgb = 'RGBWCMY'
+    channel=0; overlay = []
+    
+    plt.figure(50, figsize=[20,10]); plt.clf()
+    for ii in idx_use:      
+        recon = recon_all_list[ii]
+        
+        if 1: ## Threshold
+            #recon_plot = seg.do_thr(recon, thr)
+            recon_plot = recon.copy()
+            recon_plot[recon_plot<thr[ii]] = 0  
+            recon_plot = recon_plot/np.max(recon_plot)
+            
+        else: ## Segmentation
+            center = np.unravel_index(np.argmax(recon, axis=None), recon.shape)
+            center = np.flip(np.asarray(center))
+            print(center)
+            if ii==0:
+                centers = [center, [15, 20]]
+            elif ii==4: 
+                centers = [center, [18,27]]
+            else:
+                centers = [center]
+            recon_plot = seg.do_segmentation(recon, centers, width=2, fignum=0)
+        
+        ## Plot
+        ax = plt.subplot2grid((7, 7), (channel, 0), colspan=2); 
+        image_channel = np.asarray(util.image_RGB(recon_plot, rgb[channel]))
+        if overlay==[]:
+            overlay = image_channel
+        else: 
+            overlay += image_channel
+            
+        plt.imshow(image_channel); plt.axis('off')
+        plt.title('{:.1f}$^\circ$'.format(domain_angle_offset[ii]))
+        channel += 1
+        
+    ax = plt.subplot2grid((7, 7), (0, 2), rowspan=3, colspan=4); ax.cla()
+    ax.set_facecolor('k')    
+    plt.imshow(overlay)  #, origin='lower')    
+       
+    
+    ## Save to png
+    if flag_save_png:
+        fn_out = out_dir+'fig50_recon_overlay'
+        fn_out = check_file_exist(fn_out)
+        plt.savefig(fn_out, format='png')
 
 
 

@@ -54,6 +54,14 @@ verbose = 0
 filename_peak = './GI_tomo/param/C8BTBT_peaks.txt'
 filename_df_peaks = 'df_peaks_all_subbg{}{}'.format(flag_LinearSubBKG, extra)
 
+
+
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', -1)
+
 # =============================================================================
 # Load all/some data and plot sum
 # =============================================================================
@@ -144,6 +152,9 @@ else:
 ####### Get peak roi from scattering pattern
 peak_list = io.read_peak_list(filename_peak)
 if 2 in run_steps:     
+    fn_out = out_dir+'data_avg'
+    data_avg = np.load(fn_out+'.npy')
+    
     #### Plot to define roi
     fig = plt.figure(5, figsize=[12,12]); plt.clf(); 
     plt.title(filename)
@@ -359,7 +370,7 @@ if 6 in run_steps:
     if verbose>0:
         plt.figure(25, figsize=[20, 10]); plt.clf()
         plt.subplot(1,2,1)
-        plt.imshow(np.log10(sino)); plt.axis('auto'); plt.ylabel('rotation')
+        plt.imshow((sino)); plt.axis('auto'); plt.ylabel('rotation')
         plt.subplot(1,2,2)
         plt.plot(theta, sum_sino, alpha=0.8);  
         plt.title('sum_sino for {}'.format(peak_strong)); plt.grid()
