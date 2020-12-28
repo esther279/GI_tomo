@@ -415,7 +415,7 @@ if 7 in run_steps:
    
    
 # =============================================================================
-# Load mask
+# Load mask & Define thr
 # =============================================================================
 if 1:
     x = np.asarray(Image.open("./mask_T1.png").convert("L").rotate(0).resize((50,50)))
@@ -429,19 +429,45 @@ if 1:
     x[x==0] = np.nan
 else:
     x = 1
-
+    
+## ----- Define thr
+Ndomain = len(domain_angle_offset)    
+thr = np.zeros([Ndomain])
+for ii, recon in enumerate(recon_all_list):
+    thr[ii] = np.nanmax(recon)*0.3
+    
 # =============================================================================
 # Plot a domain
-# =============================================================================    
+# =============================================================================          
 if 8 in run_steps:
-    domain_plot = 32.5 # in deg
-
-    plt.figure(35, figsize=[8,8]); plt.clf()   
-
+    domain_plot = 32.5 ## in deg
     idx = np.argmin(np.abs(domain_angle_offset - domain_plot))
-    recon = recon_all_list[idx]
-    recon[recon<thr[ii]] = 0 #np.nan   
     
+    if 1:   ## Tune recon param
+        flag_normal = 1 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
+        width = 0
+        algo = 'fbp' ##'gridrec' #'fbp'
+
+        offset = domain_angle_offset[idx]
+        print('offset = {}'.format(offset))
+        angles_old = list_peaks_angles_orig['angle'] - 112
+        angles_new = angles_old + offset
+        list_peaks_angles['angle'] = angles_new
+        
+        sino_dm = tomo.get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
+        temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=28, algorithms = [algo], title_st='', fignum=None, colorbar=True)        
+        recon = np.squeeze(temp['_{}'.format(algo)])
+    else:   
+        recon = recon_all_list[idx]
+        sino_dm = sino_all_list[idx]
+    
+    recon[recon<thr[ii]] = 0   
+
+    plt.figure(35, figsize=[8,8]); plt.clf() 
+    plt.subplot(1,2,1)     
+    plt.imshow(sino_dm)
+    
+    plt.subplot(1,2,2)
     plt.imshow(x, alpha = 1, cmap='binary')
     plt.imshow(recon*x); plt.axis('off')
     plt.title('{:.1f}$^\circ$'.format(domain_angle_offset[idx]))
@@ -456,12 +482,7 @@ if 8 in run_steps:
 # Plot some recons after threshold
 # =============================================================================    
 if 9 in run_steps:
-    ##------ Sort domains by the largest recon val
-    Ndomain = len(domain_angle_offset)    
-    thr = np.zeros([Ndomain])
-    for ii, recon in enumerate(recon_all_list):
-        thr[ii] = np.max(recon)*0.20
-        
+    ##------ Sort domains by the largest recon val       
     idx_large = np.argsort(thr)
 
     ##------ Plot the domains with large recon val
@@ -493,7 +514,7 @@ if 10 in run_steps:
     for ii in domains_use:      
         recon = recon_all_list[ii]
         recon_thr = recon.copy()
-        recon_thr[recon<np.max(recon)*0.15]=0
+        recon_thr[recon<thr[ii]] = 0
         recon_all_list_normal.append(recon_thr/np.max(1))
         
     mask = (recon!=0).astype(float)
@@ -528,9 +549,5 @@ if 10 in run_steps:
         rot_angles = np.asarray(list_peaks_angles_orig.sort_values('angle')['angle'])
         fn_out = out_dir+'rot_angles.npy'
         np.save(fn_out, rot_angles)
-
-
-
-
 
 
