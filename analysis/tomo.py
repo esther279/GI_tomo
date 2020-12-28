@@ -308,7 +308,8 @@ def get_proj_from_sino(sino,  idx, width, flag_normal=1):
         if ii > 0 and ii < sino.shape[0]:
             line = line + sino[ii,:]
             w = w+1
-    line = line / w   
+    if w>0:
+        line = line / w   
     
     ## Normalize
     if flag_normal>=1:

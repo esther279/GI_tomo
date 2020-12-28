@@ -240,86 +240,96 @@ if 4 in run_steps:
 #
 # Shows the 1D plot (integreated intensity versus degree)
 # =============================================================================
-if 5 in run_steps: 
-    list_peaks = sino_dict['list_peaks']
-    flag_log10 = 0 # Use 1 only for plotting
-    
-    x = {}; jj=0
-    N = len(list_peaks[0:-1])
-    plt.figure(20, figsize=[15, 8]); plt.clf()
-    for ii, peak in enumerate(list_peaks[0:-1]):
-    #peak =  'sum20L'
-    #if 1:
-        sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, peak) # which peak roi
-        if flag_log10: 
-            sum_sino = np.log10(sum_sino)    
-        plt.subplot(N,1,ii+1)
-        plt.plot(theta, sum_sino, color='k');  
-        plt.axis('off')     
-        if 'b' in peak: color = [0, 0.5, 0] 
-        else: color = 'b'
-        plt.text(-23, np.max(sum_sino)*0.7, peak, fontsize=8, color=color)
-        if ii==0: plt.title(HOME_PATH+', '+filename)
+flag_load_list_peaks = 0 
+if 5 in run_steps:     
+    if flag_load_list_peaks==0:
+        list_peaks = sino_dict['list_peaks']
+        flag_log10 = 0 # Use 1 only for plotting
         
-        peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=1)
-        
-        ## Store peaks and corresponding angles to a df for reconstructing ONE domain
-        ''' Example
         x = {}; jj=0
-        #sum20L
-        x[jj] = pd.DataFrame([[28.5, 'sum20L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[209, 'sum20L']], columns=['angle','peak']); jj = jj+1
-        #sum21L
-        x[jj] = pd.DataFrame([[51, 'sum21L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[190, 'sum21L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[231, 'sum21L']], columns=['angle','peak']); jj = jj+1
-        x[jj] = pd.DataFrame([[10, 'sum21L']], columns=['angle','peak']); jj = jj+1
+        N = len(list_peaks[0:-1])
+        plt.figure(20, figsize=[15, 8]); plt.clf()
+        for ii, peak in enumerate(list_peaks[0:-1]):
+        #peak =  'sum20L'
+        #if 1:
+            sino, sum_sino, theta = tomo.get_sino_from_a_peak(sino_dict, peak) # which peak roi
+            if flag_log10: 
+                sum_sino = np.log10(sum_sino)    
+            plt.subplot(N,1,ii+1)
+            plt.plot(theta, sum_sino, color='k');  
+            plt.axis('off')     
+            if 'b' in peak: color = [0, 0.5, 0] 
+            else: color = 'b'
+            plt.text(-23, np.max(sum_sino)*0.7, peak, fontsize=8, color=color)
+            if ii==0: plt.title(HOME_PATH+', '+filename)
+            
+            peaks_idx = tomo.label_peaks(theta, sum_sino, onedomain=1)
+            
+            ## Store peaks and corresponding angles to a df for reconstructing ONE domain
+            ''' Example
+            x = {}; jj=0
+            #sum20L
+            x[jj] = pd.DataFrame([[28.5, 'sum20L']], columns=['angle','peak']); jj = jj+1
+            x[jj] = pd.DataFrame([[209, 'sum20L']], columns=['angle','peak']); jj = jj+1
+            #sum21L
+            x[jj] = pd.DataFrame([[51, 'sum21L']], columns=['angle','peak']); jj = jj+1
+            x[jj] = pd.DataFrame([[190, 'sum21L']], columns=['angle','peak']); jj = jj+1
+            x[jj] = pd.DataFrame([[231, 'sum21L']], columns=['angle','peak']); jj = jj+1
+            x[jj] = pd.DataFrame([[10, 'sum21L']], columns=['angle','peak']); jj = jj+1
+            '''
+            '''
+            for angle in theta[peaks_idx]:
+                if 1: #angle<181: #why
+                    x[jj] = pd.DataFrame([[angle, peak]], columns=['angle','peak'])
+                    jj = jj+1
+                    plt.plot([angle, angle], [0, np.max(sum_sino)*1.1], 'r', linewidth=5, alpha=0.3)
+            '''
+            jj=0
+            x[jj] = pd.DataFrame([[-53.87, 'sum11L']], columns=['angle','peak']); jj = jj+1
+            x[jj] = pd.DataFrame([[-53.87+107.75, 'sum11L']], columns=['angle','peak']); jj = jj+1
+            x[jj] = pd.DataFrame([[-53.87-12.8, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+            x[jj] = pd.DataFrame([[-53.87-12.8+107.75, 'sum11Lb']], columns=['angle','peak']); jj = jj+1
+            x[jj] = pd.DataFrame([[0, 'sum02L']], columns=['angle','peak']); jj = jj+1
+            x[jj] = pd.DataFrame([[-53.87+19.5, 'sum12L']], columns=['angle','peak']); jj = jj+1
+            x[jj] = pd.DataFrame([[-53.87+19.5+68.8, 'sum12L']], columns=['angle','peak']); jj = jj+1
+            x[jj] = pd.DataFrame([[-53.87-29, 'sum20L']], columns=['angle','peak']); jj = jj+1
+            
+        #--- Save to npy
+        if flag_save_npy:
+            fn_out = out_dir+'angles_onedomain'
+            fn_out = util.check_file_exist(fn_out)
+            np.save(fn_out, x)
+            
+        #--- Save to png
+        if flag_save_png:
+            fn_out = out_dir+'fig20_peak_deg' #+peak
+            fn_out = util.check_file_exist(fn_out)
+            plt.savefig(fn_out, format='png')
 
-        for angle in theta[peaks_idx]:
-            if 1: #angle<181: #why
-                x[jj] = pd.DataFrame([[angle, peak]], columns=['angle','peak'])
-                jj = jj+1
-                plt.plot([angle, angle], [0, np.max(sum_sino)*1.1], 'r', linewidth=5, alpha=0.3)
-         '''               
-         x = angles.get_angles_BTBT()   
-        
-    #--- Save to npy
-    if flag_save_npy:
-        fn_out = out_dir+'angles_onedomain'
-        fn_out = util.check_file_exist(fn_out)
-        np.save(fn_out, x)
-        
-    #--- Save to png
-    if flag_save_png:
-        fn_out = out_dir+'fig20_peak_deg' #+peak
-        fn_out = util.check_file_exist(fn_out)
-        plt.savefig(fn_out, format='png')
-
-    # =====================================================================
-    # Check angles or Load from file    
-    # ===================================================================== 
-    temp_list = pd.concat(x)
-    print(temp_list) #print(list_peaks_angles_orig.sort_values('angle'))
+        temp_list = pd.concat(x)
+        print(temp_list) #print(list_peaks_angles_orig.sort_values('angle'))
     
-    ## Remove peaks not needed for sino
-    if 1:
+        #--- Remove peaks not needed for sino
         list_peaks_angles_orig = temp_list[temp_list.peak !='sumSi']
     else:
-        temp = np.load('/home/etsai/BNL/Research/GIWAXS_tomo_2019C3/RLi/waxs/results_tomo/list_peaks_angles_orig.npy', allow_pickle=True)
+        temp = np.load(HOME_PATH+'/GI_tomo/list_peaks_angles_orig_S2.npy', allow_pickle=True)
         list_peaks_angles_orig=pd.DataFrame(temp,columns=['angle','peak'])
         
     print('## Compare the list with the figure and drop unwanted peaks.')
-    list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSib']
-    #list_peaks_angles_orig = list_peaks_angles_orig.drop([24])   #list_peaks_angles_orig.copy()
+    #list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sumSib']
+    #rm = []
+    #for tt, temp in enumerate(list_peaks_angles_orig.peak):
+    #    if 'b' in temp: rm.append(tt)
+    #list_peaks_angles_orig = list_peaks_angles_orig.drop(rm)
 
     print(list_peaks_angles_orig)
-    tomo.plot_angles(list_peaks_angles_orig['angle'], fignum=21)    
+    tomo.plot_angles(list_peaks_angles_orig['angle']+90, labels=list_peaks_angles_orig['peak'], color='b', FS=14, fignum=21)    
     
     if flag_save_png:
         fn_out = out_dir+'fig21_angles' #+peak
         fn_out = util.check_file_exist(fn_out)
         plt.savefig(fn_out, format='png')
-    
+        
 
          
 # =============================================================================
@@ -497,7 +507,6 @@ if 10 in run_steps:
     plt.figure(45); plt.clf()   
     plt.imshow(domains_recon*x, cmap='twilight', alpha = 0.9)
     cbar = plt.colorbar(fraction=0.03, pad=0.0, aspect=15) 
-    #plt.title('orientation angles {}'.format(temp_angle))
     util.plot_quiver(domains_recon*x)
     plt.axis('off')
     plt.plot([5, 10], [45, 45], linewidth=4, color='k')
