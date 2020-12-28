@@ -569,4 +569,60 @@ if 10 in run_steps:
         fn_out = out_dir+'rot_angles.npy'
         np.save(fn_out, rot_angles)
 
-
+# =============================================================================
+# Overlay
+# =============================================================================    
+if 11 in run_steps:    
+    domain_angles = [18, 128, 160, 111] ## in deg
+    idx_use = []
+    for angle in domain_angles:
+        idx = np.argmin(np.abs(domain_angle_offset - angle))
+        idx_use.append(idx)
+    
+    rgb = 'RGBWCMY'
+    channel=0; overlay = []
+    
+    plt.figure(50, figsize=[20,10]); plt.clf()
+    for ii in idx_use:      
+        recon = recon_all_list[ii]
+        
+        if 1: ## Threshold
+            #recon_plot = seg.do_thr(recon, thr)
+            recon_plot = recon.copy()
+            recon_plot[recon_plot<thr[ii]] = 0  
+            recon_plot = recon_plot/np.max(recon_plot)
+            
+        else: ## Segmentation
+            center = np.unravel_index(np.argmax(recon, axis=None), recon.shape)
+            center = np.flip(np.asarray(center))
+            print(center)
+            if ii==0:
+                centers = [center, [15, 20]]
+            elif ii==4: 
+                centers = [center, [18,27]]
+            else:
+                centers = [center]
+            recon_plot = seg.do_segmentation(recon, centers, width=2, fignum=0)
+        
+        ## Plot
+        ax = plt.subplot2grid((7, 7), (channel, 0), colspan=2); 
+        image_channel = np.asarray(util.image_RGB(recon_plot, rgb[channel]))
+        if overlay==[]:
+            overlay = image_channel
+        else: 
+            overlay += image_channel
+            
+        plt.imshow(image_channel); plt.axis('off')
+        plt.title('{:.1f}$^\circ$'.format(domain_angle_offset[ii]))
+        channel += 1
+        
+    ax = plt.subplot2grid((7, 7), (0, 2), rowspan=3, colspan=4); ax.cla()
+    ax.set_facecolor('k')    
+    plt.imshow(overlay)  #, origin='lower')    
+       
+    
+    ## Save to png
+    if flag_save_png:
+        fn_out = out_dir+'fig50_recon_overlay'
+        fn_out = check_file_exist(fn_out)
+        plt.savefig(fn_out, format='png')
