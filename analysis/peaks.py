@@ -93,19 +93,20 @@ def LinearSubBKG_temp(data):
 # =============================================================================
 # Get peak intensity (based on specified ROI) from raw data (tiff files)    
 # =============================================================================
-def get_peaks(infile, peak_list, phi_max=360, a=1, verbose = 0, flag_LinearSubBKG = 0, FS=12):
+def get_peaks(infile, peak_list, phi_max=360, verbose = 0, flag_LinearSubBKG = 0, FS=12):
     if verbose>0: print(infile)        
     if verbose>1: print('Parse param manually for now..\n')
     
-    temp = infile.split('_')
-    a = 0
-    zigzag_n = int(temp[3+a])
-    pos_x = float(temp[4+a][1:])
-    scan_n = int(temp[7+a])
+    idx = infile.find('x')
+    infile_short = infile[idx-2:]
+    temp = infile_short.split('_')
+    zigzag_n = int(temp[0])
+    pos_x = float(temp[1][1:])
+    scan_n = int(temp[4])
     if zigzag_n%2==0:
-        pos_phi = phi_max-float(temp[8+a])/2.0
+        pos_phi = phi_max-float(temp[5])/2.0
     else:
-        pos_phi = float(temp[8+a])/2.0
+        pos_phi = float(temp[5])/2.0
 
     df = pd.DataFrame({'pos_phi':pos_phi,
                    'pos_x':pos_x,
