@@ -101,7 +101,7 @@ def get_sino_sum(sino_data):
 # =============================================================================
 # Plot sinogram
 # =============================================================================
-def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino', vlog10=[0, 6], cmap='GnBu'):   
+def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino', vlog10=[0, 6]):   
     if type(sino_data)==dict:
         sino_allpeaks = sino_data['sino_allpeaks']
         theta = sino_data['theta']
@@ -124,7 +124,7 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
         if fignum>0: 
             plt.subplot(3,Npeaks,ii+1)
 
-        plt.imshow(sino, cmap=cmap, aspect='auto') #, vmin=0, vmax=1) #, extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
+        plt.imshow(sino, cmap='gray', aspect='auto', vmin=0, vmax=1) #, extent = [axis_x[0], axis_x[-1], theta[-1], theta[0]])
         plt.axis('off')
         
         if fignum>0:
@@ -308,8 +308,7 @@ def get_proj_from_sino(sino,  idx, width, flag_normal=1):
         if ii > 0 and ii < sino.shape[0]:
             line = line + sino[ii,:]
             w = w+1
-    if w>0:
-        line = line / w   
+    line = line / w   
     
     ## Normalize
     if flag_normal>=1:
@@ -409,6 +408,24 @@ def label_peaks(line_x, line_y, onedomain=0, axis_flip=0, fontsize=9, color=[0.2
     return peaks
 
    
-
-    
+# =============================================================================
+# Fill (peak) sino
+# =============================================================================
+def fill_sino(sino, thr = 2):
+    print('# Fill empty projection')
+    for ii in np.arange(1, sino.shape[0]-1):
+        if np.sum(sino[ii,:]) < thr:
+            row1 = 0; row2 = 0
+            x1 = 0; x2 = 0
+            while np.sum(row1) < thr and x1<50:
+                x1 = x1+1
+                row1 = sino[ii-x1]
+            while np.sum(row2) < thr and x2<50:
+                x2 = x2+1
+                row2 = sino[ii+x2]
+            
+            sino[ii,:] = (row1*x2 + row2*x1)/(x1+x2)
+    return sino
+                
+                
     
