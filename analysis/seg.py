@@ -5,7 +5,7 @@ import os, glob, time, sys
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-#import tomopy
+import tomopy
 #from scipy.signal import find_peaks
 
 import skimage.draw as draw
@@ -62,6 +62,64 @@ def do_thr(image, thr):
     return image_out
 
 
+# =============================================================================
+# 
+# =============================================================================
+def do_seg_sino(sino, thetas, rot_center=25, algo='fbp'):
+
+
+    corr_array = np.zeros(Ns)
+    thr_array = np.arange(0.1, 1, 0.025)
+    
+    #----- Get recon -----
+    temp_recon = tomopy.recon(sino.reshape(sino.shape[0],1,sino.shape[1]), thetas, center=rot_center, algorithm=algo)
+    temp_recon = tomopy.circ_mask(temp_recon, axis=0, ratio=0.95)
+    temp_recon = temp_recon/np.max(temp_recon) 
+
+    for ii, thr in enumerate(thr_array):
+        #----- Get sino -----
+        temp_sino = tomopy.project(temp_recon.reshape(1,50,50), thetas, pad=False)   
+
+        err, corr = compare_img(temp_sino, sino)
+        corr_array[ii] = corr
+        print("[{}] thr={:.2f}, err = {:.3f}, corr = {:.3f}".format(ii, thr, err, corr))
+
+        temp_sino = temp_sino/np.max(temp_sino)
+        #temp_sino[temp_sino<=0.1] = 0
+        if 0: #nn==0:
+            temp_sino[temp_sino<=0.5] = 0
+            #temp_sino[temp_sino>0.7] = 1
+
+        temp_sino = temp_sino*sino.reshape(721,1,50)    
+        
+        #----- Get recon -----
+        temp_recon = tomopy.recon(sino.reshape(721,1,50), thetas, center=rot_center, algorithm=algo)
+        temp_recon = tomopy.circ_mask(temp_recon, axis=0, ratio=0.95)
+        temp_recon = temp_recon/np.max(temp_recon)
+        if 1: #nn<Ns:
+            temp_recon[temp_recon<thr] = 0
+        
+    idx = np.argmax(corr_array)
+    print("thr_array[idx] = {:.3f}".format(thr_array[idx]))
+    
+    temp_recon = tomopy.recon(sino.reshape(721,1,50), thetas, center=rot_center, algorithm=algo)
+    temp_recon = tomopy.circ_mask(temp_recon, axis=0, ratio=0.95)
+    temp_recon = temp_recon/np.max(temp_recon)
+    if 1: #nn<Ns:
+        temp_recon[temp_recon<thr_array[idx]] = 0
+    
+    return temp_recon
+    
+    
+def compare_img(img1, img2):
+    img1 = img1.reshape(-1)
+    img2 = img2.reshape(-1)
+    err = img1/np.max(img1) - img2/np.max(img2)
+    err = np.mean(err**2)
+    corr = np.corrcoef(img1, img2)
+    corr = corr[0][1]
+    
+    return err, corr
 
 
 

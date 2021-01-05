@@ -42,7 +42,7 @@ if os.path.exists(out_dir) is False: os.mkdir(out_dir)
 # 7) For each domain, generate sinogram and recon
 # 8-10) Post-processing/Visualization
 
-run_steps = [8] 
+run_steps = [5,8] 
 flag_LinearSubBKG = 0
 flag_load_peaks = 1 
 flag_save_png = 0
@@ -291,7 +291,7 @@ if 5 in run_steps:
             if angle<360: #angle<181: #why
                 x[jj] = pd.DataFrame([[angle, peak]], columns=['angle','peak'])
                 jj = jj+1
-                plt.plot([angle, angle], [0, np.max(sum_sino)*1.1], 'r', linewidth=5, alpha=0.3)
+                #plt.plot([angle, angle], [0, np.max(sum_sino)*1.1], 'r', linewidth=5, alpha=0.3)
         
         
     plt.figure(21); plt.clf()
@@ -328,12 +328,18 @@ if 5 in run_steps:
         
     print('## Compare the list with the figure and drop unwanted peaks.')
 
-    #list_peaks_angles_orig = list_peaks_angles_orig.drop([24])   #list_peaks_angles_orig.copy()
-    #list_peaks_angles_orig = list_peaks_angles_orig.drop([29]) 
+    list_peaks_angles_orig = list_peaks_angles_orig.drop([24])   #list_peaks_angles_orig.copy()
+    list_peaks_angles_orig = list_peaks_angles_orig.drop([29]) 
     
     list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sum118']
+    list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sum117b']
     list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sum118b']
-    
+    list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sum2012']    
+    list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sum2013']  
+    list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sum206b']  
+    list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sum2012b']  
+    list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sum2013b'] 
+    list_peaks_angles_orig = list_peaks_angles_orig[list_peaks_angles_orig.peak !='sum2014b'] 
     
     print(list_peaks_angles_orig)
     #tomo.plot_angles(list_peaks_angles_orig['angle']-112, fignum=22, labels=list_peaks_angles_orig['peak'])    
@@ -404,6 +410,7 @@ if 7 in run_steps:
     
         ## Get sino
         sino_dm = tomo.get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), phi_max=360, width=width, flag_normal=flag_normal, verbose=1)
+        sino_dm = tomo.fill_sino(sino_dm, thr=5)
         ## Plot sino
         if verbose>1: 
             if ii==0:
@@ -455,10 +462,13 @@ for ii, recon in enumerate(recon_all_list):
 # Plot a domain
 # =============================================================================          
 if 8 in run_steps:
-    domain_plot = 136 ## in deg
+    domain_plot = 100# 136 ## in deg
     idx = np.argmin(np.abs(domain_angle_offset - domain_plot))
+    list_peaks_angles = list_peaks_angles_orig.copy()
     
-    if 10:   ## Tune recon param
+    flag_fill = 1
+    
+    if 1:   ## Tune recon param
         flag_normal = 1 # 1(normalize max to 1), 2(divided by the ROI area), 3 (binary)
         width = 1
         algo = 'fbp' ##'gridrec' #'fbp'
@@ -470,7 +480,11 @@ if 8 in run_steps:
         list_peaks_angles['angle'] = angles_new
         
         sino_dm = tomo.get_combined_sino(sino_dict, list_peaks_angles.sort_values('angle'), width=width, flag_normal=flag_normal, verbose=1)
-        temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=rot_center+0.8, algorithms = [algo], title_st='', fignum=None, colorbar=True)        
+        if flag_fill:
+            sino_dm = np.roll(sino_dm, -4, axis=1)
+            sino_dm = fill_sino(sino_dm, thr=1)
+            
+        temp = tomo.get_plot_recon(sino_dm, theta = sino_dict['theta'], rot_center=rot_center-4, algorithms = [algo], title_st='', fignum=None, colorbar=True)        
         recon = np.squeeze(temp['_{}'.format(algo)])
     else:   
         recon = recon_all_list[idx]
@@ -478,6 +492,7 @@ if 8 in run_steps:
     
     recon[recon<thr[ii]] = 0 #np.nan   
 
+    '''
     plt.figure(37, figsize=[4,8]); plt.clf() 
     #plt.subplot(1,2,1)     
     plt.imshow(sino_dm, cmap='YlGnBu'); plt.axis('auto')
@@ -491,6 +506,7 @@ if 8 in run_steps:
     plt.imshow(recon*x, cmap='PuBu'); plt.axis('off')
     cbar = plt.colorbar(fraction=0.04, pad=0.0, aspect=16) 
     plt.title('{:.1f}$^\circ$'.format(domain_angle_offset[idx]))
+    '''
     
 #    plt.figure(40); plt.clf()
 #    plt.subplot(1,2,1)
@@ -498,37 +514,80 @@ if 8 in run_steps:
 #    plt.subplot(1,2,2)
 #    plt.imshow(fill_sino(sino_dm, thr=5), cmap='YlGnBu'); plt.axis('auto')
     
-    sino_dm2 = fill_sino(sino_dm, thr=5)
+    #sino_dm2 = np.roll(sino_dm, -4, axis=1)
+    #sino_dm3 = fill_sino(sino_dm2, thr=1)
+    sino_dm3 = sino_dm.copy()
+    '''
+    plt.figure(99); plt.clf()
+    plt.subplot(1,4,1)
+    plt.imshow(sino_dm3, cmap='YlGnBu', vmin=0, vmax=1, alpha=0.5); plt.axis('auto')
+    plt.imshow(temp2_sino[:,0,:], cmap='hot', alpha=0.2); plt.axis('auto')
+    '''
+    
     ###
     thetas = tomopy.angles(721, 0, 360)
     
-    temp_recon = recon
-    for nn in np.arange(0,1):
-        #print("n = {}".format(n))
-        temp_sino = tomopy.project(temp_recon.reshape(1,50,50), thetas,pad=False)
-        temp_sino = temp_sino/np.max(temp_sino)
-        temp_sino[temp_sino<=0.6] = 0
-        temp_sino[temp_sino>0.6] = 1
-        #temp_sino = temp_sino/np.max(temp_sino)
-        err = temp_sino - sino_dm.reshape(721,1,50)
-        err = np.mean(err**2)
-        print("[{}] err = {}".format(nn, err))
-        temp_sino = temp_sino*sino_dm2.reshape(721,1,50)
-        temp_recon = tomopy.recon(temp_sino, thetas, center=rot_center, algorithm=algo)
-        temp_recon = temp_recon/np.max(temp_recon)
-        temp_recon[temp_recon<0.7] = 0
     
-    temp_sino = tomopy.project(temp_recon.reshape(1,50,50), thetas,pad=False)
+    temp_recon = do_seg_sino(sino_dm3, thetas, rot_center=25, algo='fbp')
+    
+    '''
+    temp_recon = recon.copy()
+    temp0_sino = tomopy.project(temp_recon.reshape(1,50,50), thetas,pad=False)
+    thr = 0.7
+    Ns = 0
+    for nn in np.arange(0,Ns+1):
+        #----- Get sino -----
+        temp_sino = tomopy.project(temp_recon.reshape(1,50,50), thetas, pad=False)   
+
+        err = temp_sino/np.max(temp_sino) - sino_dm3.reshape(721,1,50)/np.max(sino_dm3)
+        err = np.mean(err**2)
+        corr = np.corrcoef(temp_sino.reshape(-1), sino_dm3.reshape(-1))
+        print("[{}] thr={:.2f}, err = {:.3f}, corr = {:.3f}".format(nn, thr, err, corr[0][1]))
+
+        temp_sino = temp_sino/np.max(temp_sino)
+        #temp_sino[temp_sino<=0.1] = 0
+        if 0: #nn==0:
+            temp_sino[temp_sino<=0.5] = 0
+            #temp_sino[temp_sino>0.7] = 1
+
+        temp_sino = temp_sino*sino_dm3.reshape(721,1,50)    
         
-    plt.figure(100); plt.clf()
-    plt.subplot(1,4,1)
-    plt.imshow(sino_dm, cmap='YlGnBu', vmin=0, vmax=1); plt.axis('auto')
-    plt.subplot(1,4,2)
-    plt.imshow(temp_sino[:,0,:],  cmap='YlGnBu', vmin=0, vmax=1); plt.axis('auto')
-    plt.subplot(1,4,3)
-    plt.imshow(np.squeeze(temp_recon)); plt.axis('auto')
-    plt.subplot(1,4,4)
-    plt.imshow(np.squeeze(temp_sino),  cmap='YlGnBu'); plt.axis('auto')
+        #----- Get recon -----
+        temp_recon = tomopy.recon(sino_dm3.reshape(721,1,50), thetas, center=rot_center-4, algorithm=algo)
+        temp_recon = tomopy.circ_mask(temp_recon, axis=0, ratio=0.95)
+        temp_recon = temp_recon/np.max(temp_recon)
+        if 1: #nn<Ns:
+            temp_recon[temp_recon<thr] = 0
+        thr = thr+0.05
+    '''
+    
+    temp2_sino = tomopy.project(temp_recon.reshape(1,50,50), thetas,pad=False)
+        
+    plt.figure(101); plt.clf()
+    Nfig = 6; fig = 1
+    plt.subplot(1,Nfig,fig); fig = fig+1
+    plt.imshow(sino_dm3, cmap='YlGnBu', vmin=0, vmax=1, alpha=1); plt.axis('auto')
+    #plt.imshow(temp2_sino[:,0,:], cmap='YlGnBu', alpha=0.5); plt.axis('auto')
+    plt.title('sino_dm3')
+    
+    plt.subplot(1,Nfig,fig); fig = fig+1
+    plt.imshow(recon/np.max(recon),  cmap='viridis', vmin=0); plt.axis('auto')
+    plt.title('recon')
+    
+    #plt.subplot(1,Nfig,fig); fig = fig+1
+    #plt.imshow(temp0_sino[:,0,:],  cmap='YlGnBu', vmin=0); plt.axis('auto')
+    #lt.title('temp0_sino')
+
+    #plt.subplot(1,Nfig,fig); fig = fig+1
+    #plt.imshow(temp_sino[:,0,:],  cmap='YlGnBu', vmin=0); plt.axis('auto')
+    #plt.title('temp_sino')
+    
+    plt.subplot(1,Nfig,fig); fig = fig+1
+    plt.imshow(np.squeeze(temp_recon),  cmap='viridis', vmin=0); plt.axis('auto')    
+
+    plt.subplot(1,Nfig,fig); fig = fig+1
+    plt.imshow(temp2_sino[:,0,:],  cmap='YlGnBu', vmin=0); plt.axis('auto')
+    plt.title('temp2_sino')
     
     ##------ Save PNG
     if flag_save_png:     
