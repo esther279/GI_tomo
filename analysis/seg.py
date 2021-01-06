@@ -65,50 +65,47 @@ def do_thr(image, thr):
 # =============================================================================
 # 
 # =============================================================================
-def do_seg_sino(sino, thetas, rot_center=25, algo='fbp'):
+def do_seg_sino(sino, thetas, thr_range = [0.5, 1.0, 0.05], rot_center=25, algo='fbp'):
 
-
-    corr_array = np.zeros(Ns)
-    thr_array = np.arange(0.1, 1, 0.025)
-    
-    #----- Get recon -----
-    temp_recon = tomopy.recon(sino.reshape(sino.shape[0],1,sino.shape[1]), thetas, center=rot_center, algorithm=algo)
-    temp_recon = tomopy.circ_mask(temp_recon, axis=0, ratio=0.95)
-    temp_recon = temp_recon/np.max(temp_recon) 
+    thetas = thetas/180*np.pi
+    thr_array = np.arange(thr_range[0], thr_range[1]+thr_range[2], thr_range[2])
+    corr_array = np.zeros(len(thr_array))    
 
     for ii, thr in enumerate(thr_array):
-        #----- Get sino -----
-        temp_sino = tomopy.project(temp_recon.reshape(1,50,50), thetas, pad=False)   
+        
+        #----- Get recon from original sino -----
+        temp_recon = tomopy.recon(sino.reshape(sino.shape[0],1,sino.shape[1]), thetas, center=rot_center, algorithm=algo)
+        temp_recon = tomopy.circ_mask(temp_recon, axis=0, ratio=0.95)
+        temp_recon = temp_recon/np.max(temp_recon)   
+        temp_recon[temp_recon<thr] = 0
+    
+        #----- Get updated sino -----
+        temp_sino = tomopy.project(temp_recon.reshape(1,sino.shape[1],sino.shape[1]), thetas, pad=False)   
 
+        #----- Calc err -----
         err, corr = compare_img(temp_sino, sino)
         corr_array[ii] = corr
-        print("[{}] thr={:.2f}, err = {:.3f}, corr = {:.3f}".format(ii, thr, err, corr))
+        if ii>0:
+            print("[{}] thr={:.2f}, err = {:.3f}, corr = {:.3f}".format(ii, thr, err, corr))
 
-        temp_sino = temp_sino/np.max(temp_sino)
-        #temp_sino[temp_sino<=0.1] = 0
-        if 0: #nn==0:
+        #----- Adjust sino?
+        #temp_sino = temp_sino/np.max(temp_sino)
+        if 0: 
             temp_sino[temp_sino<=0.5] = 0
             #temp_sino[temp_sino>0.7] = 1
+        #temp_sino = temp_sino*sino.reshape(721,1,50)          
 
-        temp_sino = temp_sino*sino.reshape(721,1,50)    
-        
-        #----- Get recon -----
-        temp_recon = tomopy.recon(sino.reshape(721,1,50), thetas, center=rot_center, algorithm=algo)
-        temp_recon = tomopy.circ_mask(temp_recon, axis=0, ratio=0.95)
-        temp_recon = temp_recon/np.max(temp_recon)
-        if 1: #nn<Ns:
-            temp_recon[temp_recon<thr] = 0
         
     idx = np.argmax(corr_array)
     print("thr_array[idx] = {:.3f}".format(thr_array[idx]))
     
-    temp_recon = tomopy.recon(sino.reshape(721,1,50), thetas, center=rot_center, algorithm=algo)
+    temp_recon = tomopy.recon(sino.reshape(sino.shape[0],1,sino.shape[1]), thetas, center=rot_center, algorithm=algo)
     temp_recon = tomopy.circ_mask(temp_recon, axis=0, ratio=0.95)
-    temp_recon = temp_recon/np.max(temp_recon)
+    #temp_recon = temp_recon/np.max(temp_recon)
     if 1: #nn<Ns:
-        temp_recon[temp_recon<thr_array[idx]] = 0
+        temp_recon[temp_recon<thr_array[idx]*np.max(temp_recon)] = 0
     
-    return temp_recon
+    return np.squeeze(temp_recon)
     
     
 def compare_img(img1, img2):
