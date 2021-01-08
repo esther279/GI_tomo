@@ -244,9 +244,13 @@ def get_combined_sino(sino_dict, list_peaks_angles, phi_max=360, width=0, flag_n
     
     if verbose>0: print('------')
     sino_dm = np.zeros([sino_allpeaks.shape[0], sino_allpeaks.shape[1]])
+    count_dm = np.zeros([sino_allpeaks.shape[0], sino_allpeaks.shape[1]])
+    
     for ii in np.arange(0,len(list_peaks_angles)):
+        ## Get sino for a peak (eg 110)
         sino, _, _ = get_sino_from_a_peak(sino_dict, peaks[ii])  
         idx = get_index_for_peak(sino_dict, peaks[ii])
+        ## Get the projection from the sino at certain angle
         angle = angles[ii]
         if verbose>0: print('angle = {}, peak = {}, area {}'.format(np.mod(angle, phi_max), peaks[ii], areas[idx]))        
         angle_idx = get_idx_angle(theta, theta=np.mod(angle, phi_max))
@@ -255,15 +259,20 @@ def get_combined_sino(sino_dict, list_peaks_angles, phi_max=360, width=0, flag_n
             if angle>phi_max or angle<0:
                 temp = np.flip(temp)
         
-        ## Normalize 
+        ## Normalize projection
         if flag_normal==2:
             temp = temp/areas[idx]*100  
         elif flag_normal==3:
             thr = np.max(temp.copy())*0.5
             temp[temp<thr] = 0
             temp[temp>thr] = 1
-        sino_dm[angle_idx-width:angle_idx+width+1, :] = temp
+           
+        ## Populate domain sino with projections
+        sino_dm[angle_idx-width:angle_idx+width+1, :] = sino_dm[angle_idx-width:angle_idx+width+1, :]+temp
+        count_dm[angle_idx-width:angle_idx+width+1, :] = count_dm[angle_idx-width:angle_idx+width+1, :]+1
 
+    count_dm[count_dm==0] = 1
+    sino_dm = sino_dm/count_dm
     sino_dict['sino_dm'] = sino_dm
     if verbose>0: print('------')
     

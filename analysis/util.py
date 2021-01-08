@@ -88,6 +88,17 @@ def image_RGB(image, rgb):
         
     return image_stack
    
-    
-    
+# =============================================================================
+#     FFT
+# =============================================================================
+def get_fft_abs(x, yabs=1, log10=1):
+    y = np.fft.fft2(x)
+    if yabs==1:
+        y = np.abs(y)
+    else:
+        y = np.imag(y)
+    if log10==1:
+        y = np.log10(y)
+    y = np.fft.fftshift(y)
+    return y
     

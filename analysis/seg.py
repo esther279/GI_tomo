@@ -65,11 +65,12 @@ def do_thr(image, thr):
 # =============================================================================
 # 
 # =============================================================================
-def do_seg_sino(sino, thetas, thr_range = [0.5, 1.0, 0.05], rot_center=25, algo='fbp'):
+def do_seg_sino(sino, thetas, thr_range = [0.5, 1.0, 0.05], use_err=1, rot_center=25, algo='fbp'):
 
     thetas = thetas/180*np.pi
     thr_array = np.arange(thr_range[0], thr_range[1]+thr_range[2], thr_range[2])
-    corr_array = np.zeros(len(thr_array))    
+    corr_array = np.zeros(len(thr_array)) 
+    err_array = np.zeros(len(thr_array))
 
     for ii, thr in enumerate(thr_array):
         
@@ -84,9 +85,10 @@ def do_seg_sino(sino, thetas, thr_range = [0.5, 1.0, 0.05], rot_center=25, algo=
 
         #----- Calc err -----
         err, corr = compare_img(temp_sino, sino)
+        err_array[ii] = err
         corr_array[ii] = corr
         if ii>0:
-            print("[{}] thr={:.2f}, err = {:.3f}, corr = {:.3f}".format(ii, thr, err, corr))
+            print("[{}] thr={:.2f}, err={:.3f}, corr={:.3f}".format(ii, thr, err, corr))
 
         #----- Adjust sino?
         #temp_sino = temp_sino/np.max(temp_sino)
@@ -95,8 +97,15 @@ def do_seg_sino(sino, thetas, thr_range = [0.5, 1.0, 0.05], rot_center=25, algo=
             #temp_sino[temp_sino>0.7] = 1
         #temp_sino = temp_sino*sino.reshape(721,1,50)          
 
-        
-    idx = np.argmax(corr_array)
+    ## Use correlation or error
+    if use_err == -1:   ## use correlation
+        idx = np.argmax(corr_array)
+    elif use_err == 0: 
+        idx1 = np.argmax(corr_array)
+        idx2 = np.argmin(err_array)
+        idx = int((idx1+idx2)/2)
+    else:  ## use error
+        idx = np.argmin(err_array)    
     print("thr_array[idx] = {:.3f}".format(thr_array[idx]))
     
     temp_recon = tomopy.recon(sino.reshape(sino.shape[0],1,sino.shape[1]), thetas, center=rot_center, algorithm=algo)
@@ -104,19 +113,22 @@ def do_seg_sino(sino, thetas, thr_range = [0.5, 1.0, 0.05], rot_center=25, algo=
     #temp_recon = temp_recon/np.max(temp_recon)
     if 1: #nn<Ns:
         temp_recon[temp_recon<thr_array[idx]*np.max(temp_recon)] = 0
+    temp_sino = tomopy.project(temp_recon.reshape(1,sino.shape[1],sino.shape[1]), thetas, pad=False)  
     
-    return np.squeeze(temp_recon)
+    return np.squeeze(temp_recon), np.squeeze(temp_sino)
     
     
 def compare_img(img1, img2):
     img1 = img1.reshape(-1)
     img2 = img2.reshape(-1)
-    err = img1/np.max(img1) - img2/np.max(img2)
+    err = normalize_array(img1) - normalize_array(img2)
     err = np.mean(err**2)
     corr = np.corrcoef(img1, img2)
     corr = corr[0][1]
     
     return err, corr
 
-
+def normalize_array(x):
+    y = (x-np.min(x))/(np.max(x)-np.min(x))
+    return y
 
