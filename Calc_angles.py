@@ -172,28 +172,42 @@ wavelength = 12.4/13.5
 
 peaks = []
 #peaks = [[0,1,7]]
-peaks = [[0,1,3], [0,1,5], [0,1,7]]
-for ii in [0,1,3,5,7,9,11,13]:
-  peaks.append([1,1,ii])
-peaks.append([0,2,0])
-#peaks.append([1,2,0]); 
-#peaks.append([1,2,2])
-for ii in [0,1,2,6,7,8]:
-    peaks.append([2,0,ii])
-peaks.append([2,1,9])
+#peaks = [[0,1,1]] #, [0,1,5], [0,1,7]]
+
+if 0:
+    for ii in [1]:
+      peaks.append([1,1,ii])
+    peaks.append([0,2,0])
+    peaks.append([1,2,0]); 
+    for ii in [0]:
+        peaks.append([2,0,ii])
+    peaks.append([2,1,1])
+
+else:
+    peaks = [[0,1,7]]
+    for ii in [14]:
+      peaks.append([1,1,ii])
+    #peaks.append([0,2,1])
+    #peaks.append([1,2,2]); 
+    for ii in [8]:
+        peaks.append([2,0,ii])
+    #peaks.append([2,1,9])
+
 
 peaks_full = []
 for p in peaks:
-  if p[0]>0:
+  if p[0]>0 and (p[1]!=0 or p[2]!=0):
     peaks_full.append([-p[0],p[1],p[2]])
 peaks_full = peaks_full+ peaks
 
 N = len(peaks_full); print('N={}'.format(N))
 x = {}
-#lattice=(5.93, 7.88, 29.18, 90/180*np.pi, 92.4/180*np.pi, 90/180*np.pi)
-#lattice_deg=(5.93, 7.88, 29.18, 90, 92.4, 90)
-lattice=(5.83, 7.88, 29.18, 90/180*np.pi, 99.4/180*np.pi, 90/180*np.pi)
-lattice_deg=(5.83, 7.88, 29.18, 90, 99.4, 90)
+
+#lattice_deg= np.asarray([5.93, 7.88, 29.18, 90, 92.4, 90])
+#lattice_deg= np.asarray([5.83, 7.88, 29.18, 90, 99.4, 90])
+lattice_deg= np.asarray([5.86, 7.72, 33.7, 90, 93.2, 90])
+lattice = lattice_deg.copy()
+lattice[3:] = lattice[3:]/180*np.pi
 
 jj = 0
 for peak in peaks_full:
@@ -215,11 +229,11 @@ for peak in peaks_full:
   angle = np.round(angle, decimals=3) - 90
   #print('# rot = {:.2}'.format(2*calc_ratation_theta(theta_x, theta_z)))
   x[jj] = pd.DataFrame([[angle, peakname]], columns=['angle','peak']); jj=jj+1
-  x[jj] = pd.DataFrame([[angle+180, peakname+'.']], columns=['angle','peak']); jj=jj+1
+  x[jj] = pd.DataFrame([[angle+180, peakname+'*']], columns=['angle','peak']); jj=jj+1
 
   angle_left = angle - 2*calc_ratation_theta(theta_x, theta_z)
-  x[jj] = pd.DataFrame([[angle_left, peakname+'B']], columns=['angle','peak']); jj=jj+1
-  x[jj] = pd.DataFrame([[angle_left+180, peakname+'B.']], columns=['angle','peak']); jj=jj+1  
+  x[jj] = pd.DataFrame([[angle_left, peakname+'b']], columns=['angle','peak']); jj=jj+1
+  x[jj] = pd.DataFrame([[angle_left+180, peakname+'b*']], columns=['angle','peak']); jj=jj+1  
   
   
 temp_list = pd.concat(x)
@@ -236,27 +250,29 @@ ones = np.ones(len(angles_rad))
 
 plt.figure(1, figsize=[8,8]); plt.clf()
 ax = plt.subplot(111, projection='polar')
-ax.bar(angles_rad, ones*0.8, width=ones*0.01, color='r', alpha=0.8)
+ax.bar(angles_rad, ones*0.8, width=ones*0.01, color='b', alpha=0.9)
 ax.set_rticks([]) 
 ax.set_xticklabels([])
-FS = 11; FW = 1; FW1=2
+plt.axis('off')
+FS = 11; FW = 'bold'; FW1='bold'
+green = [0, 0.7, 0]
 
 for ii, angle in enumerate(angles_rad):
         label = labels[ii]
         if label[0]=='-':
-          s = 1
+          s = 0
         else:
           s = 0
                
         ## Label angles
-        if label[s+0]=='0' or label[s+1]=='0':
-            ax.bar(angle, ones*0.8, width=ones*0.01, color='g', alpha=0.8)
-            tt = ax.text(angle, 0.9, str(angles_deg[ii]), color='g', fontsize=FS-1,fontweight=FW1, ha='center', va='center')
-        elif label[-1]=='B':
-            ax.bar(angle, ones*0.8, width=ones*0.01, color='m', alpha=0.8)
-            tt = ax.text(angle, 0.85, str(angles_deg[ii]), color='k', fontsize=FS-1,fontweight=FW1, ha='center', va='center')
+        #if label[s+0]=='0' or label[s+1]=='0':
+         #   ax.bar(angle, ones*0.8, width=ones*0.01, color='g', alpha=0.8)
+        #    tt = ax.text(angle, 0.92, str(angles_deg[ii]), color='k', fontsize=FS-1,fontweight=FW1, ha='center', va='center')
+        if label[-1]=='b' or label[-2]=='b':
+            ax.bar(angle, ones*0.85, width=ones*0.01, color=green, alpha=0.9)
+            tt = ax.text(angle, 0.87, str(angles_deg[ii]), color='k', fontsize=FS-1,fontweight=FW1, ha='center', va='center')
         else:
-            tt = ax.text(angle, 0.8, str(angles_deg[ii]), color='k', fontsize=FS-1, fontweight=FW1, ha='center',va='center')
+            tt = ax.text(angle, 0.85, str(angles_deg[ii]), color='k', fontsize=FS-1, fontweight=FW1, ha='center',va='center')
             
         if np.cos(angle)<=0.01: rotate=angle+np.pi
         else: rotate = angle
@@ -264,10 +280,12 @@ for ii, angle in enumerate(angles_rad):
      
         ## Label peak
         if len(labels)>0:
-          if label[s+0]=='0' or label[s+1]=='0':
-              tt2 = ax.text(angle, 1+0.08*np.mod(ii,2), label[s:], color='g', fontsize=FS, fontweight=FW, ha='center',va='center')
+          #if label[s+0]=='0' or label[s+1]=='0':
+           #   tt2 = ax.text(angle, 1.05+0.0*np.mod(ii,2), label[s:], color='g', fontsize=FS, fontweight='bold', ha='center',va='center')
+          if label[-1]=='b' or label[-2]=='b':
+              tt2 = ax.text(angle, 1.1+0.0*np.mod(ii,2), label[s:], color=green, fontsize=FS, fontweight='bold', ha='center',va='center')
           else:
-              tt2 = ax.text(angle, 0.9+0.08*np.mod(ii,2), label[s:], color='b',fontsize=FS, fontweight=FW, ha='center', va='center')
+              tt2 = ax.text(angle, 0.98+0.0*np.mod(ii,2), label[s:], color='b',fontsize=FS, fontweight='bold', ha='center', va='center')
 
 
 

@@ -420,8 +420,9 @@ def label_peaks(line_x, line_y, onedomain=0, axis_flip=0, fontsize=9, color=[0.2
 # =============================================================================
 # Fill (peak) sino
 # =============================================================================
-def fill_sino(sino, thr = 2):
-    print('# Fill empty projection')
+def fill_sino(sino, thr = 2, verbose=0):
+    if verbose>0:
+        print('# Fill empty projection')
     sino_filled = sino.copy()
     for ii in np.arange(1, sino.shape[0]-1):
         if np.sum(sino[ii,:]) < thr:
@@ -434,7 +435,6 @@ def fill_sino(sino, thr = 2):
                 x2 = x2+1
                 row2 = sino[ii+x2]
             
-            #print('{}; {},{}'.format(ii,x1,x2))
             sino_filled[ii,:] = (row1*x2 + row2*x1)/(x1+x2)
     return sino_filled                
  

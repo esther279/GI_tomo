@@ -15,11 +15,11 @@ from scipy import signal
 from scipy import misc
 
 import tomopy
-
+from skimage.transform import rescale, resize, downscale_local_mean
 
 ## Input
-if 0:
-    fn = './img/exp_sample2.png';  
+if 1:
+    fn = './img/tomo2_mask_50.png';  
     flag_input_png = True
     rot_angles = [0]
 else:
@@ -39,8 +39,9 @@ if flag_input_png:
     #kernal = kernal/np.sum(kernal)
     #img = signal.convolve2d(img, kernal, boundary='symm', mode='same')
     
-    img = 255-img
+    #img = 255-img
     img = np.around(img/np.max(img)*100)
+    #img = downscale_local_mean(img, (4, 4))
     temp_angle = [43, 63, 87, 100] 
 else:
     img = np.load(fn)
@@ -57,7 +58,7 @@ plt.title('{}, {}'.format(fn, temp_angle))
 
 ### Generate sino
 img_3d = img.reshape(1,img.shape[0], img.shape[1])
-thetas = tomopy.angles(720, 0, 359)
+thetas = tomopy.angles(360, 0, 360) #tomopy.angles(nang, ang1=0.0, ang2=180.0)
 #thetas = tomopy.angles(180, 0+ori_angle, 180+ori_angle)
 sino = tomopy.project(img_3d, thetas, center=None, emission=True, pad=True)
 
@@ -66,9 +67,9 @@ plt.imshow(sino[:,0,:], aspect='auto'); plt.colorbar()
 
 ### Tomo recon
 rot_center = tomopy.find_center(sino, thetas, init=len(img)/2, ind=0, tol=0.1)
-rot_center =  37
+rot_center =  sino.shape[2]/2
 #print(rot_center)
-algo = 'fbp' #'gridrec'
+algo = 'gridrec' #'fbp' #'gridrec'
 recon = tomopy.recon(sino, thetas, center=rot_center, algorithm=algo)
 recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
 plt.subplot(333)
@@ -79,8 +80,9 @@ plt.title(algo)
 
 ### Limited angles
 peak_angles = np.asarray([0, 20.1, 36.1, 55.6, 90, 180-20.1, 180-36.1, 180-55.6])
-peak_angles = [(x-180) if x>180 else x for x in peak_angles]
-temp_angles = np.arange(0, 180, 1)
+peak_angles = np.arange(0, 360, 10)
+#peak_angles = [(x-180) if x>180 else x for x in peak_angles]
+temp_angles = np.arange(0, 360, 1)
 ratio = len(peak_angles) / len(temp_angles)
 angles_all = np.append(peak_angles, temp_angles)
 angles_all.sort()
@@ -104,21 +106,31 @@ plt.imshow(recon_la[0, :,:], cmap='gray') #, vmin=0, vmax=100)
 plt.colorbar()
 plt.title(algo)
 
-
+###
+if 1:
+    fft = np.fft.fftshift(np.fft.fft2(sino.squeeze()))
+    fft_la = np.fft.fftshift(np.fft.fft2(sino_la.squeeze()))
+    plt.subplot(338)
+    plt.imshow(np.log10(np.abs(fft)), aspect='auto')
+    
+    plt.subplot(339)
+    plt.imshow(np.log10(np.abs(fft_la)), aspect='auto')  
+    
 ####
-sino_exp = sino_all_list[7]
-sino_exp = sino_exp.reshape(sino_exp.shape[0], 1, sino_exp.shape[1])
-recon_exp = tomopy.recon(sino_exp, thetas, center=30, algorithm=algo)
-recon_exp = tomopy.circ_mask(recon_exp, axis=0, ratio=0.95)
-
-plt.subplot(338)
-plt.imshow(sino_exp[:,0,:], aspect='auto')
-plt.colorbar()
-
-plt.subplot(339)
-plt.imshow(recon_exp[0, :,:], cmap='gray')
-plt.colorbar()
-
+if 0:
+    sino_exp = sino_all_list[7]
+    sino_exp = sino_exp.reshape(sino_exp.shape[0], 1, sino_exp.shape[1])
+    recon_exp = tomopy.recon(sino_exp, thetas, center=30, algorithm=algo)
+    recon_exp = tomopy.circ_mask(recon_exp, axis=0, ratio=0.95)
+    
+    plt.subplot(338)
+    plt.imshow(sino_exp[:,0,:], aspect='auto')
+    plt.colorbar()
+    
+    plt.subplot(339)
+    plt.imshow(recon_exp[0, :,:], cmap='gray')
+    plt.colorbar()
+    
 
 
 

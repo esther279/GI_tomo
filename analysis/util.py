@@ -102,3 +102,16 @@ def get_fft_abs(x, yabs=1, log10=1):
     y = np.fft.fftshift(y)
     return y
     
+# =============================================================================
+# 
+# Return the index for the n-th largest item =============================================================================
+def argmaxn(x, axis=0, n=2):    
+    idx = np.argsort(x, axis=axis)
+    return idx[-n]
+    
+    
+    
+    
+    
+
+

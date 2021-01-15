@@ -4,17 +4,16 @@
 import time, os, sys, re, glob, random, copy
 import numpy as np
 import matplotlib.pyplot as plt
-
 from PIL import Image
 from scipy import signal
 from scipy import misc
-
 import tomopy
 
+import analysis.tomo as tomo
 
 ## Input
-if 0:
-    fn = './img/exp_sample2.png';  
+if 1:
+    fn = './img/sample1.png';  
     flag_input_png = True
     rot_angles = [0]
 else:
@@ -59,7 +58,7 @@ if flag_generate_sino:
     
     th_1 = 0  #***Specify. np.min([np.nanmin(img), 0]) - 1
     th_2 = 180
-    th_step = 0.5
+    th_step = 2
     
     Nproj = len(rot_angles)
     plt.figure(2, figsize=[22,12]); plt.clf()
@@ -107,6 +106,6 @@ if flag_generate_sino:
         plt.imshow(np.log10(sino_peak[aa]), aspect='auto', extent=[1, len(sino_peak[0]), np.max(thetas_deg), np.min(thetas_deg)]); 
         plt.title('{}'.format(origin))
 
-    plot_sino(sino_peak[aa], fignum=3, theta=thetas_deg)
+    tomo.plot_sino(sino_peak[aa], fignum=3, theta=thetas_deg)
         
         
