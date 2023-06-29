@@ -1,6 +1,8 @@
 # GI_tomo
 https://github.com/esther279/GI_tomo.git
 
+Ref: Tsai, Esther HR, Yu Xia, Masafumi Fukuto, Y-L. Loo, and Ruipeng Li. "Grazing-incidence X-ray diffraction tomography for characterizing organic thin films." Journal of Applied Crystallography 54, no. 5 (2021): 1327-1339. https://doi.org/10.1107/S1600576721007184 
+
 Scripts:
 1. Typical tomographic reconstruction example: **tomopy_example.py**
 2. Simulation: **main_sim.py** (for limited angles), **main_sim_peak.py** (for sample with different orientations and sino for a peak)
