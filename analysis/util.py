@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os, glob, time, sys
+import os, glob, time, sys, datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
@@ -40,15 +40,19 @@ def plot_box(center, size, color='r'):
 # =============================================================================
 # Check if file exists, append file name with number
 # =============================================================================
-def check_file_exist(fn):
-    ii=0  
-    fn_out = copy.deepcopy(fn)
-    while os.path.exists(fn_out):
-        ii = ii+1
-        fn_out = fn +'_{:d}'.format(ii)
-    print('Saving to {}'.format(fn_out))
+def check_file_exist(filename, ext=None):
+    if ext==None:
+        print('Please specify file extension!')
+        return None
     
-    return fn_out
+    ii=0  
+    filename_out = copy.deepcopy(filename+ext)
+    while os.path.exists(filename_out):
+        ii = ii+1
+        filename_out = filename +'_{:d}'.format(ii)+ext
+        
+    print('Saving to {}'.format(filename_out))
+    return filename_out
 
 
 # =============================================================================
@@ -103,15 +107,20 @@ def get_fft_abs(x, yabs=1, log10=1):
     return y
     
 # =============================================================================
-# 
-# Return the index for the n-th largest item =============================================================================
+# Return the index for the n-th largest item 
+# =============================================================================
 def argmaxn(x, axis=0, n=2):    
     idx = np.argsort(x, axis=axis)
     return idx[-n]
     
     
-    
-    
+# =============================================================================
+# Print current date/time
+# =============================================================================    
+def print_time():
+    now = datetime.datetime.now()
+    dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
+    print("{}\n".format(dt_string)) 
     
 
 
