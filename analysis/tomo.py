@@ -163,7 +163,7 @@ def plot_sino(sino_data, fignum=30, theta=[0, 1], axis_x=[0, 1], title_st='sino'
 # =============================================================================
 # Do recon and plot
 # =============================================================================
-def get_plot_recon(sino_data, theta = [], rot_center=0, algorithms = ['art', 'gridrec', 'fbp'], title_st=[], fignum=40, colorbar=False):
+def get_plot_recon(sino_data, theta = [], rot_center=0, algorithms = ['art', 'gridrec', 'fbp'], title_st=[], fignum=40,  cmap='jet', colorbar=False):
     if type(sino_data)==dict:
         sino_allpeaks = sino_data['sino_allpeaks']
         theta = sino_data['theta']
@@ -216,7 +216,7 @@ def get_plot_recon(sino_data, theta = [], rot_center=0, algorithms = ['art', 'gr
             if fignum is not None:
                 if fignum>0: 
                     plt.subplot(len(algorithms), Npeaks, (jj)*Npeaks+ii+1)
-                plt.imshow(recon[0, :,:], cmap='jet') #, vmin=0, vmax=1.5e7)
+                plt.imshow(recon[0, :,:], cmap=cmap) #, vmin=0, vmax=1.5e7)
                 if title_st==[]:
                     if ii%2: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)), fontweight='bold')
                     else: plt.title('{}\n{}, cen{:.1f}'.format(peak, algo, float(rot_center)))
